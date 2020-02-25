@@ -1,5 +1,5 @@
-# sstCASSIM
-Simple simulation package for the SST Camera. Intended to inform on decisions for the final camera design.
+# sstcam-simulation
+Low-level and simple simulation package for the SST Camera. Intended to inform on decisions for the final camera design.
 
 ### Why not simtelarray?
 1. We want something simple - This project is intended to be a simple Python package, avoiding the need to dig into simtelarray code, or the need to account for all the inputs required for a simtelarray production.
