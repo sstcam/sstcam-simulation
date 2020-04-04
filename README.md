@@ -3,9 +3,9 @@ Low-level and simple simulation package for the SST Camera. Intended to inform o
 
 ### Why not simtelarray?
 1. We want something simple - This project is intended to be a simple Python package, avoiding the need to dig into simtelarray code, or the need to account for all the inputs required for a simtelarray production.
-2. We only care about the performance of our camera -  We don't need to worry about ray tracing and array layouts, and allowing flexibility for other cameras. 
+2. We only care about the performance of our camera -  We don't need to worry about ray tracing, array layouts, or other cameras. 
 3. Finer specification of the camera - simtelarray does not allow us to easily investigate some parameters of our camera, such as the real saturation behaviour and ASIC calibration.
-4. Trigger performance - investigating all aspects of trigger performance in simtelarray is dificult. Writing a simple simulation package ourselves for this should be very easy.
+4. Trigger performance - investigating all aspects of trigger performance in simtelarray is difficult (due to lack of "noise events"). Writing a simple simulation package ourselves for this should be very easy.
 
 ## Setup
 
