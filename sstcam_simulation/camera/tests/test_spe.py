@@ -27,3 +27,4 @@ def test_spe_spectra(spectrum_class):
     assert spectrum.x.size == spectrum.n_points
     np.testing.assert_allclose(np.sum(spectrum.pdf), 1)
     np.testing.assert_allclose(np.average(spectrum.x, weights=spectrum.pdf), 1)
+    assert spectrum.excess_noise_factor >= 1
