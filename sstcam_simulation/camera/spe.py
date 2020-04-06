@@ -134,23 +134,6 @@ class SPESpectrum(metaclass=ABCMeta):
             Probability for charge x (not-normalised)
         """
 
-    def sample(self, shape=1):
-        """
-        Sample the probability distribution to obtain a charge
-
-        Parameters
-        ----------
-        shape : int or tuple
-            Specifies the shape of the array, containing the corresponding
-            number of charge samples
-
-        Returns
-        -------
-        ndarray
-        """
-        # TODO: Seed?
-        return np.random.choice(self.x, shape, self.pdf)
-
     @property
     def excess_noise_factor(self):
         """
