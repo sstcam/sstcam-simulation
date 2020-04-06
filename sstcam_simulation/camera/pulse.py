@@ -27,6 +27,7 @@ class ReferencePulse(metaclass=ABCMeta):
         pulse = self._function(self.time)
         self.y_scale = pulse.sum() * CONTINUOUS_SAMPLE_WIDTH
         self.pulse = pulse / self.y_scale
+        self.origin = self.pulse.argmax() - self.pulse.size // 2
 
     @abstractmethod
     def _function(self, time):
