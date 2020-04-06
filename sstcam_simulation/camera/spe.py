@@ -150,6 +150,18 @@ class SPESpectrum(metaclass=ABCMeta):
         return 1 + variance
 
 
+class PerfectPhotosensor(SPESpectrum):
+    def __init__(self):
+        """
+        SPE spectrum for a perfect photosensor, which always reports the exact
+        number of photoelectrons that are generated inside it
+        """
+        super().__init__(x_min=1, x_max=1, n_points=1)
+
+    def _function(self, x):
+        return np.ones(1)
+
+
 class SiPMGentileSPE(SPESpectrum):
     def __init__(self, x_min=0, x_max=10, n_points=10000, spe_sigma=0.1, opct=0.2):
         """
