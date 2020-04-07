@@ -26,4 +26,7 @@ setup(
     tests_require=['pytest', ],
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
+    package_data={
+        '': ['data/*'],
+    },
 )
