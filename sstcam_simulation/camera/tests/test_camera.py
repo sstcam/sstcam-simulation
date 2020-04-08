@@ -1,4 +1,4 @@
-from sstcam_simulation.camera import Camera
+from sstcam_simulation.camera import Camera, PixelMapping
 from sstcam_simulation.camera.pulse import GaussianPulse
 from sstcam_simulation.camera.spe import SiPMGentileSPE
 import numpy as np
@@ -26,8 +26,12 @@ def test_continuous_readout():
     time = np.array([camera.continuous_readout_length // 2])
     charge = np.array([2])
 
-    # readout = camera.get_continuous_readout(pixel, time, charge)
-    # integral = readout.sum(1) * camera.continuous_sample_width
-    # argmax = readout.argmax(1) * camera.continuous_sample_width
-    # np.testing.assert_allclose(integral, charge)
-    # np.testing.assert_allclose(argmax, time)
+
+def test_n_pixels():
+    camera = Camera()
+    assert camera.pixel.n_pixels == 2048
+    assert camera.superpixel.n_superpixels == 512
+
+    camera = Camera(pixel=PixelMapping(n_pixels=2))
+    assert camera.pixel.n_pixels == 2
+    assert camera.superpixel.n_superpixels == 1

@@ -2,8 +2,12 @@ from .mapping import PixelMapping, SuperpixelMapping
 from .pulse import ReferencePulse, GaussianPulse
 from .spe import SPESpectrum, SiPMGentileSPE
 from .constants import SAMPLE_WIDTH, CONTINUOUS_SAMPLE_DIVISION, CONTINUOUS_SAMPLE_WIDTH
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
+
+__all__ = [
+    "Camera"
+]
 
 
 @dataclass
@@ -12,12 +16,17 @@ class Camera:
     Container for properties which define the camera
     """
     continuous_readout_length: int = 1000  # Unit: nanosecond
+    waveform_length: int = 128  # Unit: nanosecond
     trigger_threshold: float = 0.5  # Unit: photoelectron / ns
     coincidence_window: float = 8  # Unit: ns
+    lookback_time: float = 20  # Unit: ns
     pixel: PixelMapping = PixelMapping()
-    superpixel: SuperpixelMapping = SuperpixelMapping(pixel=pixel)
+    superpixel: SuperpixelMapping = field(init=False)
     reference_pulse: ReferencePulse = GaussianPulse()
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
+
+    def __post_init__(self):
+        self.superpixel = SuperpixelMapping(self.pixel)
 
     @property
     def sample_width(self):

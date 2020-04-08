@@ -99,5 +99,4 @@ class SuperpixelMapping:
     def _get_rowcol(n_superpixels, superpixel, rowcol):
         superpixel_rowcol = np.zeros((n_superpixels, 4))
         superpixel_rowcol[superpixel, np.argsort(superpixel) % 4] = rowcol
-        print(superpixel_rowcol)
         return superpixel_rowcol[:, 0] // 2

@@ -1,4 +1,10 @@
 
+__all__ = [
+    "SAMPLE_WIDTH",
+    "CONTINUOUS_SAMPLE_DIVISION",
+    "CONTINUOUS_SAMPLE_WIDTH",
+]
+
 # Unit: nanosecond.
 # Constant to simplify sampling and reference pulse definition.
 SAMPLE_WIDTH = 1
