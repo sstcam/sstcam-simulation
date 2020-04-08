@@ -2,7 +2,7 @@ from sstcam_simulation.camera import Camera, PixelMapping
 from sstcam_simulation.event import PhotoelectronSource
 
 
-def test_event_simulator():
+def test_photoelectron_source():
     camera = Camera()
     PhotoelectronSource(camera)
 

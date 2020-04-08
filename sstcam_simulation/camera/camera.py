@@ -20,6 +20,7 @@ class Camera:
     trigger_threshold: float = 0.5  # Unit: photoelectron / ns
     coincidence_window: float = 8  # Unit: ns
     lookback_time: float = 20  # Unit: ns
+    electronic_noise_stddev: float = 0  # Unit: photoelectron / ns
     pixel: PixelMapping = PixelMapping()
     superpixel: SuperpixelMapping = field(init=False)
     reference_pulse: ReferencePulse = GaussianPulse()

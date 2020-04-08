@@ -23,11 +23,7 @@ class PhotoelectronSource:
             Ensures the reproducibility of an event if you know its seed
         """
         self.camera = camera
-        self.rng = np.random.default_rng(seed=seed)
-
-    @property
-    def seed(self):
-        return self.rng.bit_generator
+        self.seed = seed
 
     def get_nsb(self, rate):
         """
@@ -44,6 +40,8 @@ class PhotoelectronSource:
         Photoelectrons
             Container for the NSB photoelectron arrays
         """
+        rng = np.random.default_rng(seed=self.seed)
+
         length = self.camera.continuous_readout_length
         n_pixels = self.camera.pixel.n_pixels
         time_axis = self.camera.continuous_time_axis
@@ -51,7 +49,7 @@ class PhotoelectronSource:
 
         # Number of NSB photoelectrons per pixel in this event
         avg_photons_per_waveform = rate * 1e6 * length * 1e-9
-        n_nsb_per_pixel = self.rng.poisson(avg_photons_per_waveform, n_pixels)
+        n_nsb_per_pixel = rng.poisson(avg_photons_per_waveform, n_pixels)
         print(n_nsb_per_pixel)
 
         # Pixel containing each photoelectron
@@ -59,10 +57,10 @@ class PhotoelectronSource:
 
         # Uniformly distribute NSB photoelectrons in time across waveform
         n_photoelectrons = nsb_pixel.size
-        nsb_time = self.rng.choice(time_axis, size=n_photoelectrons)
+        nsb_time = rng.choice(time_axis, size=n_photoelectrons)
 
         # Get the charge reported by the photosensor (Inverse Transform Sampling)
-        nsb_charge = self.rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
+        nsb_charge = rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
 
         return Photoelectrons(pixel=nsb_pixel, time=nsb_time, charge=nsb_charge)
 

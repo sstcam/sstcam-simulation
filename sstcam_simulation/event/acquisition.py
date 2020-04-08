@@ -68,7 +68,7 @@ def add_coincidence_window(above_threshold, coincidence_samples, digital_signal)
 
 
 class EventAcquisition:
-    def __init__(self, camera):
+    def __init__(self, camera, seed=None):
         """
         Collection of methods which simulate operations performed by the camera
         electronics for event acquisition (e.g. sampling, trigger,
@@ -80,8 +80,12 @@ class EventAcquisition:
         ----------
         camera : Camera
             Description of the camera
+        seed : int or tuple
+            Seed for the numpy random number generator.
+            Ensures the reproducibility of an event if you know its seed
         """
         self.camera = camera
+        self.seed = seed
 
     def get_photoelectrons_per_pixel(self, photoelectrons):
         """Number of photoelectrons in each photosensor pixel"""
@@ -112,6 +116,7 @@ class EventAcquisition:
             photoelectrons convolved with the reference pulse shape
             Shape: (n_pixels, n_continuous_readout_samples)
         """
+        rng = np.random.default_rng(seed=self.seed)
 
         # Samples corresponding to the photoelectron time
         time = photoelectrons.time
@@ -130,7 +135,8 @@ class EventAcquisition:
         origin = self.camera.reference_pulse.origin
         convolved = convolve1d(continuous_readout, pulse, mode="constant", origin=origin)
 
-        # TODO: electronic noise
+        # Add electronic noise
+        convolved += rng.normal(0, self.camera.electronic_noise_stddev, convolved.shape)
 
         return convolved
 

@@ -40,6 +40,16 @@ def test_get_continuous_readout(acquisition):
     np.testing.assert_allclose(argmax, photoelectrons.time)
 
 
+def test_get_continuous_readout_noise():
+    camera = Camera(electronic_noise_stddev=1, pixel=PixelMapping(n_pixels=1))
+    acquisition = EventAcquisition(camera=camera, seed=1)
+    photoelectrons = Photoelectrons(
+        pixel=np.array([], dtype=np.int), time=np.array([]), charge=np.array([])
+    )
+    readout = acquisition.get_continuous_readout(photoelectrons)
+    np.testing.assert_allclose(readout.std(), 1, rtol=1e-2)
+
+
 def test_sum_superpixels():
     n_superpixels = 2
     n_samples = 10
