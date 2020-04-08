@@ -1,19 +1,20 @@
-from sstcam_simulation.camera import Camera
-from sstcam_simulation.simulation import EventSimulator
+from sstcam_simulation.camera import Camera, PixelMapping
+from sstcam_simulation.event import PhotoelectronSource
 
 
 def test_event_simulator():
     camera = Camera()
-    EventSimulator(camera)
+    PhotoelectronSource(camera)
 
 
 def test_get_nsb():
-    camera = Camera(n_pixels=2)
-    simulator = EventSimulator(camera, seed=1)
+    pixel_mapping = PixelMapping(n_pixels=2)
+    camera = Camera(pixel=pixel_mapping)
+    simulator = PhotoelectronSource(camera, seed=1)
     nsb = simulator.get_nsb(rate=1000)
     assert (nsb.pixel.size == nsb.time.size) & (nsb.pixel.size == nsb.charge.size)
-    assert (nsb.pixel == 0).sum() == 128
-    assert (nsb.pixel == 1).sum() == 122
+    assert (nsb.pixel == 0).sum() == 1001
+    assert (nsb.pixel == 1).sum() == 982
     assert (nsb.time > 0).all()
     assert (nsb.charge > 0).all()
 
@@ -21,12 +22,12 @@ def test_get_nsb():
 def test_seed():
     camera = Camera()
 
-    simulator_1 = EventSimulator(camera)
-    simulator_2 = EventSimulator(camera)
-    simulator_3 = EventSimulator(camera, seed=simulator_2.seed)
-    simulator_4 = EventSimulator(camera, seed=1)
-    simulator_5 = EventSimulator(camera, seed=1)
-    simulator_6 = EventSimulator(camera, seed=2)
+    simulator_1 = PhotoelectronSource(camera)
+    simulator_2 = PhotoelectronSource(camera)
+    simulator_3 = PhotoelectronSource(camera, seed=simulator_2.seed)
+    simulator_4 = PhotoelectronSource(camera, seed=1)
+    simulator_5 = PhotoelectronSource(camera, seed=1)
+    simulator_6 = PhotoelectronSource(camera, seed=2)
 
     # get_nsb
     nsb_1 = simulator_1.get_nsb(rate=1000)

@@ -1,2 +1,2 @@
 from .photoelectrons import Photoelectrons
-from .simulator import EventSimulator
+from .source import PhotoelectronSource

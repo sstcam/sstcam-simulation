@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 import numpy as np
 
+__all__ = [
+    "Photoelectrons",
+]
+
 
 @dataclass
 class Photoelectrons:

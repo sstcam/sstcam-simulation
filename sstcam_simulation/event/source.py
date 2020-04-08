@@ -2,13 +2,17 @@ import numpy as np
 from ..camera import Camera
 from .photoelectrons import Photoelectrons
 
+__all__ = [
+    "PhotoelectronSource"
+]
 
-class EventSimulator:
+
+class PhotoelectronSource:
     def __init__(self, camera, seed=None):
         """
-        Container for all of the methods which perform operations using
-        `numpy.random` in order to simulate an event measured by the Cherenkov
-        camera.
+        Collection of methods which simulate illumination sources and the
+        detection of the photons by the photosensors, providing photoelectron
+        arrays
 
         Parameters
         ----------
@@ -16,7 +20,7 @@ class EventSimulator:
             Description of the camera
         seed : int or tuple
             Seed for the numpy random number generator.
-             Ensures the reproducibility of an event if you know its seed
+            Ensures the reproducibility of an event if you know its seed
         """
         self.camera = camera
         self.rng = np.random.default_rng(seed=seed)
@@ -40,8 +44,8 @@ class EventSimulator:
         Photoelectrons
             Container for the NSB photoelectron arrays
         """
-        length = self.camera.waveform_length
-        n_pixels = self.camera.n_pixels
+        length = self.camera.continuous_readout_length
+        n_pixels = self.camera.pixel.n_pixels
         time_axis = self.camera.continuous_time_axis
         spectrum = self.camera.photoelectron_spectrum
 
