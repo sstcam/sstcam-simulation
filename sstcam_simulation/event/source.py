@@ -50,7 +50,6 @@ class PhotoelectronSource:
         # Number of NSB photoelectrons per pixel in this event
         avg_photons_per_waveform = rate * 1e6 * length * 1e-9
         n_nsb_per_pixel = rng.poisson(avg_photons_per_waveform, n_pixels)
-        print(n_nsb_per_pixel)
 
         # Pixel containing each photoelectron
         nsb_pixel = np.repeat(np.arange(n_pixels), n_nsb_per_pixel)

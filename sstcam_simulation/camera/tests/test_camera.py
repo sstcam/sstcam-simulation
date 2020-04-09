@@ -2,6 +2,8 @@ from sstcam_simulation.camera import Camera, PixelMapping
 from sstcam_simulation.camera.pulse import GaussianPulse
 from sstcam_simulation.camera.spe import SiPMGentileSPE
 import numpy as np
+import pytest
+from dataclasses import FrozenInstanceError
 
 
 def test_camera():
@@ -35,3 +37,18 @@ def test_n_pixels():
     camera = Camera(pixel=PixelMapping(n_pixels=2))
     assert camera.pixel.n_pixels == 2
     assert camera.superpixel.n_superpixels == 1
+
+
+def test_read_only():
+    camera = Camera(trigger_threshold=5)
+    assert camera.trigger_threshold == 5
+    with pytest.raises(FrozenInstanceError):
+        # noinspection PyDataclass
+        camera.trigger_threshold = 6
+
+
+def test_update_trigger_threshold():
+    camera = Camera(trigger_threshold=5)
+    assert camera.trigger_threshold == 5
+    camera.update_trigger_threshold(6)
+    assert camera.trigger_threshold == 6

@@ -81,6 +81,14 @@ def test_add_coincidence_window(acquisition):
     assert np.array_equal(trigger_readout, trigger_readout_expected)
 
 
+def test_update_trigger_threshold():
+    camera = Camera(trigger_threshold=5)
+    acquisition = EventAcquisition(camera=camera)
+    assert acquisition.camera.trigger_threshold == 5
+    camera.update_trigger_threshold(6)
+    assert acquisition.camera.trigger_threshold == 6
+
+
 def test_get_digital_trigger_readout(acquisition):
     n_pixels = acquisition.camera.pixel.n_pixels
     n_superpixels = acquisition.camera.superpixel.n_superpixels

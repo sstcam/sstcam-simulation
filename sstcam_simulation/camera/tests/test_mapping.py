@@ -68,7 +68,6 @@ def test_superpixel_mapping():
     superpixel_mapping = SuperpixelMapping(pixel_mapping)
     assert superpixel_mapping.n_superpixels == 16
     assert superpixel_mapping.i.size == superpixel_mapping.n_superpixels
-    print(np.unique(superpixel_mapping.row))
     assert np.unique(superpixel_mapping.row).size == 4
     assert np.unique(superpixel_mapping.column).size == 4
     assert superpixel_mapping.neighbours.shape == (42, 2)
@@ -77,7 +76,6 @@ def test_superpixel_mapping():
     superpixel_mapping = SuperpixelMapping(pixel_mapping)
     assert superpixel_mapping.n_superpixels == 1
     assert superpixel_mapping.i.size == superpixel_mapping.n_superpixels
-    print(np.unique(superpixel_mapping.row))
     assert np.unique(superpixel_mapping.row).size == 1
     assert np.unique(superpixel_mapping.column).size == 1
     assert superpixel_mapping.neighbours.shape == (0, 2)
@@ -86,7 +84,6 @@ def test_superpixel_mapping():
     superpixel_mapping = SuperpixelMapping(pixel_mapping)
     assert superpixel_mapping.n_superpixels == 1
     assert superpixel_mapping.i.size == superpixel_mapping.n_superpixels
-    print(np.unique(superpixel_mapping.row))
     assert np.unique(superpixel_mapping.row).size == 1
     assert np.unique(superpixel_mapping.column).size == 1
     assert superpixel_mapping.neighbours.shape == (0, 2)

@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 
-@dataclass
+@dataclass(frozen=True)
 class Camera:
     """
     Container for properties which define the camera
@@ -27,7 +27,7 @@ class Camera:
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
 
     def __post_init__(self):
-        self.superpixel = SuperpixelMapping(self.pixel)
+        super().__setattr__('superpixel', SuperpixelMapping(self.pixel))
 
     @property
     def sample_width(self):
@@ -48,3 +48,6 @@ class Camera:
     def continuous_time_axis(self):
         """Time axis for the continuous readout. Unit: nanosecond"""
         return np.arange(0, self.continuous_readout_length, self.continuous_sample_width)
+
+    def update_trigger_threshold(self, trigger_threshold):
+        super().__setattr__('trigger_threshold', trigger_threshold)
