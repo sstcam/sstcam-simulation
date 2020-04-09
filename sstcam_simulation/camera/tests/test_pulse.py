@@ -25,4 +25,4 @@ def test_generic_pulse():
     reference_pulse = GenericPulse(input_time, input_values)
     np.testing.assert_allclose(reference_pulse.pulse.sum() * CONTINUOUS_SAMPLE_WIDTH, 1)
     assert reference_pulse.time.size == reference_pulse.pulse.size
-    assert reference_pulse.pulse.size == 600
+    assert reference_pulse.pulse.size == 60 / CONTINUOUS_SAMPLE_WIDTH

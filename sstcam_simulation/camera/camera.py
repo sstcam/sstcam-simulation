@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 __all__ = [
-    "Camera"
+    "Camera",
 ]
 
 
@@ -17,10 +17,10 @@ class Camera:
     """
     continuous_readout_length: int = 1000  # Unit: nanosecond
     waveform_length: int = 128  # Unit: nanosecond
-    trigger_threshold: float = 0.5  # Unit: photoelectron / ns
+    trigger_threshold: float = 2  # Unit: photoelectron
     coincidence_window: float = 8  # Unit: ns
     lookback_time: float = 20  # Unit: ns
-    electronic_noise_stddev: float = 0  # Unit: photoelectron / ns
+    electronic_noise_stddev: float = 0  # Unit: photoelectron
     pixel: PixelMapping = PixelMapping()
     superpixel: SuperpixelMapping = field(init=False)
     reference_pulse: ReferencePulse = GaussianPulse()
@@ -48,6 +48,12 @@ class Camera:
     def continuous_time_axis(self):
         """Time axis for the continuous readout. Unit: nanosecond"""
         return np.arange(0, self.continuous_readout_length, self.continuous_sample_width)
+
+    def get_waveform_sample_from_time(self, time):
+        return int(time / self.sample_width)
+
+    def get_continuous_readout_sample_from_time(self, time):
+        return int(time / self.sample_width * self.continuous_sample_division)
 
     def update_trigger_threshold(self, trigger_threshold):
         super().__setattr__('trigger_threshold', trigger_threshold)

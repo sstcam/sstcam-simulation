@@ -47,7 +47,8 @@ def test_get_continuous_readout_noise():
         pixel=np.array([], dtype=np.int), time=np.array([]), charge=np.array([])
     )
     readout = acquisition.get_continuous_readout(photoelectrons)
-    np.testing.assert_allclose(readout.std(), 1, rtol=1e-2)
+    stddev_pe = readout.std() / camera.reference_pulse.peak_height
+    np.testing.assert_allclose(stddev_pe, 1, rtol=1e-2)
 
 
 def test_sum_superpixels():
@@ -127,6 +128,7 @@ def test_get_backplane_trigger():
     acquisition = EventAcquisition(camera=camera)
     n_superpixels = camera.superpixel.n_superpixels
     n_samples = camera.continuous_time_axis.size
+    csample = camera.get_continuous_readout_sample_from_time
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
     trigger_time, trigger_pair = acquisition.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (0,)
@@ -134,21 +136,21 @@ def test_get_backplane_trigger():
 
     # No overlap (after sampling)
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
-    trigger_readout[0, 10:20] = True
-    trigger_readout[0, 100:120] = True
-    trigger_readout[1, 115:130] = True
-    trigger_readout[2, 200:220] = True
-    trigger_readout[3, 215:230] = True
+    trigger_readout[0, csample(1.00):csample(2.00)] = True
+    trigger_readout[0, csample(10.0):csample(12.0)] = True
+    trigger_readout[1, csample(11.5):csample(13.0)] = True
+    trigger_readout[2, csample(20.0):csample(22.0)] = True
+    trigger_readout[3, csample(21.5):csample(23.0)] = True
     trigger_time, trigger_pair = acquisition.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (0,)
     assert trigger_pair.shape == (0, 2)
 
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
-    trigger_readout[0, 10:20] = True
-    trigger_readout[0, 100:125] = True
-    trigger_readout[1, 115:130] = True
-    trigger_readout[2, 200:225] = True
-    trigger_readout[3, 215:230] = True
+    trigger_readout[0, csample(1.00):csample(2.00)] = True
+    trigger_readout[0, csample(10.0):csample(12.5)] = True
+    trigger_readout[1, csample(11.5):csample(13.0)] = True
+    trigger_readout[2, csample(20.0):csample(22.5)] = True
+    trigger_readout[3, csample(21.5):csample(23.0)] = True
     trigger_time, trigger_pair = acquisition.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (2,)
     assert trigger_pair.shape == (2, 2)
@@ -175,30 +177,34 @@ def test_sample_waveform():
     time_axis = camera.continuous_time_axis
     n_continuous_samples = time_axis.size
     n_samples = camera.waveform_length * camera.sample_width
+    sample = camera.get_waveform_sample_from_time
+    csample = camera.get_continuous_readout_sample_from_time
+    width = camera.sample_width
+    cwidth = camera.continuous_sample_width
     continuous_readout = np.zeros((n_pixels, n_continuous_samples))
-    continuous_readout[0, 300:305] = 100
-    continuous_readout[2, 400:410] = 100
+    continuous_readout[0, csample(30.0):csample(30.5)] = 100
+    continuous_readout[2, csample(40.0):csample(41.0)] = 100
 
     waveform = acquisition.sample_readout(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
-    waveform_expected = np.zeros((n_pixels, n_samples))
-    waveform_expected[0, 30] = 50
-    waveform_expected[2, 40] = 100
-    assert np.array_equal(waveform, waveform_expected)
+    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
+    assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
+    assert waveform[0].argmax() == sample(30.0)
+    assert waveform[2].argmax() == sample(40.0)
 
     waveform = acquisition.sample_readout(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
-    waveform_expected = np.zeros((n_pixels, n_samples))
-    waveform_expected[0, 20] = 50
-    waveform_expected[2, 30] = 100
-    assert np.array_equal(waveform, waveform_expected)
+    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
+    assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
+    assert waveform[0].argmax() == sample(20.0)
+    assert waveform[2].argmax() == sample(30.0)
 
     waveform = acquisition.sample_readout(continuous_readout, 25)
     assert waveform.shape == (n_pixels, n_samples)
-    waveform_expected = np.zeros((n_pixels, n_samples))
-    waveform_expected[0, 25] = 50
-    waveform_expected[2, 35] = 100
-    assert np.array_equal(waveform, waveform_expected)
+    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
+    assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
+    assert waveform[0].argmax() == sample(25.0)
+    assert waveform[2].argmax() == sample(35.0)
 
     # Out of bounds
     with pytest.raises(ValueError):
@@ -214,16 +220,15 @@ def test_sample_waveform():
     n_continuous_samples = time_axis.size
     n_samples = camera.waveform_length * camera.sample_width
     continuous_readout = np.zeros((n_pixels, n_continuous_samples))
-    continuous_readout[0, 300:305] = 100
+    continuous_readout[0, csample(30.0):csample(30.5)] = 100
 
     waveform = acquisition.sample_readout(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
-    waveform_expected = np.zeros((n_pixels, n_samples))
-    waveform_expected[0, 30] = 50
-    assert np.array_equal(waveform, waveform_expected)
+    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
+    assert waveform[0].argmax() == sample(30.0)
 
     waveform = acquisition.sample_readout(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
-    waveform_expected = np.zeros((n_pixels, n_samples))
-    waveform_expected[0, 20] = 50
-    assert np.array_equal(waveform, waveform_expected)
+    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
+    assert waveform[0].argmax() == sample(20.0)
+

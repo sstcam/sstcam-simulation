@@ -11,7 +11,7 @@ SAMPLE_WIDTH = 1
 
 # Sub-sampling division to emulate continuous readout for reference pulse and
 # trigger line.
-CONTINUOUS_SAMPLE_DIVISION = 10
+CONTINUOUS_SAMPLE_DIVISION = 5
 
 # Unit: nanosecond.
 # Defines sub-sampling to emulate continuous readout for reference pulse and trigger line.

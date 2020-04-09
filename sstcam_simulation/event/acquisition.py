@@ -136,7 +136,10 @@ class EventAcquisition:
         convolved = convolve1d(continuous_readout, pulse, mode="constant", origin=origin)
 
         # Add electronic noise
-        convolved += rng.normal(0, self.camera.electronic_noise_stddev, convolved.shape)
+        # (First convert noise stddev to sample units, i.e. p.e./ns)
+        sample_unit_per_photoelectron = self.camera.reference_pulse.peak_height
+        stddev = self.camera.electronic_noise_stddev * sample_unit_per_photoelectron
+        convolved += rng.normal(0, stddev, convolved.shape)
 
         return convolved
 
@@ -167,7 +170,10 @@ class EventAcquisition:
         )
 
         # Discriminate superpixel readout with threshold
-        above_threshold = superpixel_sum >= self.camera.trigger_threshold
+        # (First convert threshold to sample units, i.e. p.e./ns)
+        sample_unit_per_photoelectron = self.camera.reference_pulse.peak_height
+        threshold = self.camera.trigger_threshold * sample_unit_per_photoelectron
+        above_threshold = superpixel_sum >= threshold
 
         # Extend by coincidence window length
         division = self.camera.continuous_sample_division
