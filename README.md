@@ -1,4 +1,4 @@
-# sstcam-simulation [![tests](https://github.com/sstcam/sstcam-simulation/workflows/tests/badge.svg)](https://github.com/sstcam/sstcam-simulation/actions?query=workflow%3Atests)
+# sstcam-simulation [![tests](https://github.com/sstcam/sstcam-simulation/workflows/tests/badge.svg)](https://github.com/sstcam/sstcam-simulation/actions?query=workflow%3Atests) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sstcam/sstcam-simulation/master)
 
 Low-level and simple simulation package for the SST Camera. Intended to inform on decisions for the final camera design.
 
