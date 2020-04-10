@@ -1,6 +1,8 @@
+name: sstcam-simulation
 channels:
   - conda-forge
 dependencies:
+  - anaconda-client
   - numpy
   - scipy
   - astropy
