@@ -27,9 +27,7 @@ jobs:
           conda-channels: anaconda, conda-forge
       - name: Install
         run: |
-          conda init bash
           conda env create -f environment.yml
-          conda activate sstcam-simulation
           python setup.py develop
       - name: Pytest
         run: pytest
