@@ -62,12 +62,14 @@ class PixelMapping:
         table = np.genfromtxt(mapping_path, delimiter='\t', names=True, dtype=None)
         self.n_pixels = n_pixels if n_pixels else table.size
         self.i = table['pixel'][:n_pixels]
-        self.x = table['xpix'][:n_pixels]
-        self.y = table['ypix'][:n_pixels]
+        self.x = table['xpix'][:n_pixels]  # Units: m
+        self.y = table['ypix'][:n_pixels]  # Units: m
         self.row = table['row'][:n_pixels]
         self.column = table['col'][:n_pixels]
         self.superpixel = table['superpixel'][:n_pixels]
         self.neighbours = get_neighbours(row=self.row, column=self.column, diagonal=True)
+        separations = np.diff(np.sort(self.x[self.row == self.row.max() // 2]))
+        self.size = 1 if not separations.size else np.min(separations)
 
 
 class SuperpixelMapping:
@@ -88,6 +90,8 @@ class SuperpixelMapping:
         self.row = self._get_rowcol(self.n_superpixels, pixel.superpixel, pixel.row)
         self.column = self._get_rowcol(self.n_superpixels, pixel.superpixel, pixel.column)
         self.neighbours = get_neighbours(row=self.row, column=self.column, diagonal=True)
+        separations = np.diff(np.sort(self.x[self.row == self.row.max() // 2]))
+        self.size = 1 if not separations.size else np.min(separations)
 
     @staticmethod
     def _get_coordinate(n_superpixels, superpixel, coordinate):
