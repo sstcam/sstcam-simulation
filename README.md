@@ -1,4 +1,4 @@
-# sstcam-simulation
+# sstcam-simulation ![tests](https://github.com/sstcam/sstcam-simulation/workflows/tests/badge.svg)
 Low-level and simple simulation package for the SST Camera. Intended to inform on decisions for the final camera design.
 
 ### Why not simtelarray?
