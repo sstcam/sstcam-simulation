@@ -1,8 +1,6 @@
-name: sstcam-simulation
 channels:
   - conda-forge
 dependencies:
-  - python>=3.7
   - numpy
   - scipy
   - astropy
