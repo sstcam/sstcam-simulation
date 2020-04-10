@@ -34,6 +34,42 @@ def test_get_uniform_illumination():
     np.testing.assert_allclose(pe.time.std(), 2, rtol=1e-1)
 
 
+def test_get_cherenkov_shower():
+    shower_kwargs = dict(
+        centroid_x=0.1,
+        centroid_y=0,
+        length=0.01,
+        width=0.01,
+        psi=0,
+        time_gradient=0,
+        time_intercept=20,
+        intensity=1000,
+        cherenkov_pulse_width=5
+    )
+
+    camera = Camera()
+    simulator = PhotoelectronSource(camera, seed=1)
+    pe = simulator.get_cherenkov_shower(**shower_kwargs)
+    assert (pe.pixel.size == pe.time.size) & (pe.pixel.size == pe.charge.size)
+    assert pe.pixel.size == 991
+    assert (pe.charge > 0).all()
+    np.testing.assert_allclose(pe.charge.sum(), 991, rtol=1e-1)
+    np.testing.assert_allclose(pe.time.mean(), 20, rtol=1e-1)
+    np.testing.assert_allclose(pe.time.std(), 5, rtol=1e-1)
+
+
+def test_get_random_cherenkov_shower():
+    camera = Camera()
+    simulator = PhotoelectronSource(camera, seed=1)
+    pe = simulator.get_random_cherenkov_shower(cherenkov_pulse_width=5)
+    assert (pe.pixel.size == pe.time.size) & (pe.pixel.size == pe.charge.size)
+    assert pe.pixel.size == 40891
+    assert (pe.charge > 0).all()
+    np.testing.assert_allclose(pe.charge.sum(), 41032.3, rtol=1e-1)
+    np.testing.assert_allclose(pe.time.mean(), 827.86, rtol=1e-1)
+    np.testing.assert_allclose(pe.time.std(), 5, rtol=1e-1)
+
+
 def test_seed():
     camera = Camera()
 
@@ -64,6 +100,29 @@ def test_seed():
     sim_4 = simulator_4.get_uniform_illumination(time=40, illumination=50, pulse_width=2)
     sim_5 = simulator_5.get_uniform_illumination(time=40, illumination=50, pulse_width=2)
     sim_6 = simulator_6.get_uniform_illumination(time=40, illumination=50, pulse_width=2)
+    assert sim_1 != sim_2
+    assert sim_2 != sim_3  # Generator has been progressed
+    assert sim_3 != sim_4
+    assert sim_4 == sim_5
+    assert sim_5 != sim_6
+
+    # get_cherenkov_shower
+    shower_kwargs = dict(
+        centroid_x=0.1,
+        centroid_y=0,
+        length=0.01,
+        width=0.01,
+        psi=0,
+        time_gradient=1,
+        time_intercept=20,
+        intensity=100,
+    )
+    sim_1 = simulator_1.get_cherenkov_shower(**shower_kwargs)
+    sim_2 = simulator_2.get_cherenkov_shower(**shower_kwargs)
+    sim_3 = simulator_3.get_cherenkov_shower(**shower_kwargs)
+    sim_4 = simulator_4.get_cherenkov_shower(**shower_kwargs)
+    sim_5 = simulator_5.get_cherenkov_shower(**shower_kwargs)
+    sim_6 = simulator_6.get_cherenkov_shower(**shower_kwargs)
     assert sim_1 != sim_2
     assert sim_2 != sim_3  # Generator has been progressed
     assert sim_3 != sim_4

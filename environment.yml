@@ -1,6 +1,7 @@
 name: sstcam-simulation
 channels:
   - conda-forge
+  - cta-observatory
 dependencies:
   - anaconda-client
   - numpy
@@ -15,3 +16,6 @@ dependencies:
   - tqdm
   - pytest
   - notebook
+  - ctapipe>=0.7
+  - pip:
+      - "--editable=git+https://github.com/sstcam/CHECLabPy#egg=CHECLabPy"
