@@ -6,9 +6,11 @@ on:
     branches:
     - '*'
 
+name: tests
+
 jobs:
-  example-1:
-    name: Ex1 (${{ matrix.python-version }}, ${{ matrix.os }})
+  build:
+    name: TEST (${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -28,3 +30,5 @@ jobs:
         run: |
           conda info
           conda list
+          pytest
+    
