@@ -11,23 +11,17 @@ on:
 
 jobs:
   build:
+    name: Build
     runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-        python-version: [3.6, 3.7, 3.8]
-    name: Tests
     steps:
       - uses: actions/checkout@v2
-      - name: Setup conda
-        uses: s-weigand/setup-conda@v1
+      - uses: goanpeca/setup-miniconda@v1
         with:
-          update-conda: true
-          python-version: ${{ matrix.python-version }}
-          conda-channels: anaconda, conda-forge
-      - name: Install
+           activate-environment: anaconda-client-env
+           environment-file: environment.yml
+           python-version: ${{ matrix.python-version }}
+           auto-activate-base: false
+      - shell: bash -l {0}
         run: |
-          conda env create -f environment.yml
-          python setup.py develop
-      - name: Pytest
-        run: pytest
+          conda info
+          conda list
