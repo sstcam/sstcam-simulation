@@ -13,3 +13,5 @@ dependencies:
   - h5py
   - PyYAML
   - tqdm
+  - pytest
+  - notebook
