@@ -15,22 +15,6 @@ def acquisition():
     return acquisition
 
 
-def test_get_photoelectrons_per_pixel(acquisition):
-    photoelectrons = Photoelectrons(
-        pixel=np.array([0, 1]), time=np.array([30, 40]), charge=np.array([1.0, 2.0])
-    )
-    pe = acquisition.get_photoelectrons_per_pixel(photoelectrons)
-    assert np.array_equal(pe, np.array([1, 1]))
-
-
-def test_get_charge_per_pixel(acquisition):
-    photoelectrons = Photoelectrons(
-        pixel=np.array([0, 1]), time=np.array([30, 40]), charge=np.array([1.0, 2.0])
-    )
-    charge = acquisition.get_charge_per_pixel(photoelectrons)
-    assert np.array_equal(charge, np.array([1.0, 2.0]))
-
-
 def test_get_continuous_readout(acquisition):
     photoelectrons = Photoelectrons(
         pixel=np.array([0, 1]), time=np.array([30, 40]), charge=np.array([1.0, 2.0])

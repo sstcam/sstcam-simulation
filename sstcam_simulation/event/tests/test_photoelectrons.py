@@ -22,3 +22,29 @@ def test_photoelectrons():
     photoelectrons_3 = Photoelectrons(pixel, time, charge)
     assert photoelectrons_1 != photoelectrons_2
     assert photoelectrons_2 == photoelectrons_3
+
+
+def test_get_photoelectrons_per_pixel():
+    photoelectrons = Photoelectrons(
+        pixel=np.array([0, 1]), time=np.array([30, 40]), charge=np.array([1.0, 2.0])
+    )
+    pe = photoelectrons.get_photoelectrons_per_pixel(n_pixels=2)
+    assert np.array_equal(pe, np.array([1, 1]))
+
+
+def test_get_charge_per_pixel():
+    photoelectrons = Photoelectrons(
+        pixel=np.array([0, 1]), time=np.array([30, 40]), charge=np.array([1.0, 2.0])
+    )
+    charge = photoelectrons.get_charge_per_pixel(n_pixels=2)
+    assert np.array_equal(charge, np.array([1.0, 2.0]))
+
+
+def test_get_average_time_per_pixel():
+    photoelectrons = Photoelectrons(
+        pixel=np.array([0, 0, 1, 1]),
+        time=np.array([30, 40, 40, 50]),
+        charge=np.array([1.0, 2.0, 3.0, 4.0])
+    )
+    time = photoelectrons.get_average_time_per_pixel(n_pixels=2)
+    assert np.array_equal(time, np.array([35.0, 45.0]))

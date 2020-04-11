@@ -87,18 +87,6 @@ class EventAcquisition:
         self.camera = camera
         self.seed = seed
 
-    def get_photoelectrons_per_pixel(self, photoelectrons):
-        """Number of photoelectrons in each photosensor pixel"""
-        pixel_photoelectrons = np.zeros(self.camera.pixel.n_pixels, dtype=np.int)
-        np.add.at(pixel_photoelectrons, photoelectrons.pixel, 1)
-        return pixel_photoelectrons
-
-    def get_charge_per_pixel(self, photoelectrons):
-        """Total charge (in units of p.e.) reported by each photosensor pixel"""
-        pixel_charge = np.zeros(self.camera.pixel.n_pixels)
-        np.add.at(pixel_charge, photoelectrons.pixel, photoelectrons.charge)
-        return pixel_charge
-
     def get_continuous_readout(self, photoelectrons):
         """
         Obtain the sudo-continuous readout from the camera for the given
