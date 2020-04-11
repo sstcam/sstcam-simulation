@@ -29,7 +29,7 @@ class ReferencePulse(metaclass=ABCMeta):
         self.y_scale = pulse.sum() * CONTINUOUS_SAMPLE_WIDTH
         self.pulse = pulse / self.y_scale
         self.origin = self.pulse.argmax() - self.pulse.size // 2
-        self.peak_height = self.pulse.max()
+        self.peak_height = self.pulse.max()  # Units: 1 / ns
 
     @abstractmethod
     def _function(self, time):

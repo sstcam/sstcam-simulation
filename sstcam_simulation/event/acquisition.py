@@ -116,8 +116,6 @@ class EventAcquisition:
             photoelectrons convolved with the reference pulse shape
             Shape: (n_pixels, n_continuous_readout_samples)
         """
-        rng = np.random.default_rng(seed=self.seed)
-
         # Samples corresponding to the photoelectron time
         time = photoelectrons.time
         sample = (time / self.camera.continuous_sample_width).astype(np.int)
@@ -136,12 +134,9 @@ class EventAcquisition:
         convolved = convolve1d(continuous_readout, pulse, mode="constant", origin=origin)
 
         # Add electronic noise
-        # (First convert noise stddev to sample units, i.e. p.e./ns)
-        sample_unit_per_photoelectron = self.camera.reference_pulse.peak_height
-        stddev = self.camera.electronic_noise_stddev * sample_unit_per_photoelectron
-        convolved += rng.normal(0, stddev, convolved.shape)
+        noisy = self.camera.electronic_noise.add_to_readout(convolved)
 
-        return convolved
+        return noisy
 
     def get_digital_trigger_readout(self, continuous_readout):
         """

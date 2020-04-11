@@ -1,6 +1,7 @@
 from .mapping import PixelMapping, SuperpixelMapping
 from .pulse import ReferencePulse, GaussianPulse
 from .spe import SPESpectrum, SiPMGentileSPE
+from .noise import ElectronicNoise, PerfectElectronics
 from .constants import SAMPLE_WIDTH, CONTINUOUS_SAMPLE_DIVISION, CONTINUOUS_SAMPLE_WIDTH
 from dataclasses import dataclass, field
 import numpy as np
@@ -20,11 +21,11 @@ class Camera:
     trigger_threshold: float = 2  # Unit: photoelectron
     coincidence_window: float = 8  # Unit: ns
     lookback_time: float = 20  # Unit: ns
-    electronic_noise_stddev: float = 0  # Unit: photoelectron
     pixel: PixelMapping = PixelMapping()
     superpixel: SuperpixelMapping = field(init=False)
     reference_pulse: ReferencePulse = GaussianPulse()
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
+    electronic_noise: ElectronicNoise = PerfectElectronics()
 
     def __post_init__(self):
         super().__setattr__('superpixel', SuperpixelMapping(self.pixel))

@@ -1,4 +1,6 @@
 from sstcam_simulation.event.photoelectrons import Photoelectrons
+from sstcam_simulation.camera.noise import GaussianNoise
+from sstcam_simulation.camera.pulse import GaussianPulse
 from sstcam_simulation.event.acquisition import EventAcquisition, sum_superpixels, \
     add_coincidence_window
 from sstcam_simulation.camera import Camera, PixelMapping
@@ -40,8 +42,12 @@ def test_get_continuous_readout(acquisition):
     np.testing.assert_allclose(argmax, photoelectrons.time)
 
 
-def test_get_continuous_readout_noise():
-    camera = Camera(electronic_noise_stddev=1, pixel=PixelMapping(n_pixels=1))
+def test_get_continuous_readout_with_noise():
+    pulse = GaussianPulse()
+    noise = GaussianNoise(stddev=pulse.peak_height, seed=1)
+    camera = Camera(
+        reference_pulse=pulse, electronic_noise=noise, pixel=PixelMapping(n_pixels=1)
+    )
     acquisition = EventAcquisition(camera=camera, seed=1)
     photoelectrons = Photoelectrons(
         pixel=np.array([], dtype=np.int), time=np.array([]), charge=np.array([])
