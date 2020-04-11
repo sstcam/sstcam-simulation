@@ -18,7 +18,7 @@ Low-level and simple simulation package for the SST camera.
 4. Direct control of pixel illumination - Many of the important camera specifications can be examined without Corsika Cherenkov shower and ray tracing simulations. Specifying exactly the average illumination you wish to simulate for each pixel allows more statistics to be gathered with less CPU time.
 5. Trigger performance - Investigating all aspects of trigger performance in simtelarray is difficult (due to lack of "noise events"). This is a simple operation in this package.
 
-**It is important to note that this package is not intended to replace simtelarray. Instead, this package complements it, allowing us to better understand our camera's performance and appropriate simulation input parameters, resulting in a more accurate simtelarray description and final performance expectation.**
+**It is important to note that this package is not intended to replace simtelarray. Instead, this package should complement it, allowing for a better understanding of the SST camera performance and appropriate simulation input parameters, resulting in a more accurate simtelarray description and final performance expectation.**
 
 ## Install
 
