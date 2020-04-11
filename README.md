@@ -1,48 +1,65 @@
 # sstcam-simulation [![tests](https://github.com/sstcam/sstcam-simulation/workflows/tests/badge.svg)](https://github.com/sstcam/sstcam-simulation/actions?query=workflow%3Atests) [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/sstcam/sstcam-simulation/master)
 
-Low-level and simple simulation package for the SST Camera. Intended to inform on decisions for the final camera design.
+Low-level and simple simulation package for the SST camera. 
+
+
+### Purpose
+
+* Provide a simulation framework of the SST camera where we have full control over the camera description, readout chain, and trigger logic. 
+* Inform on decisions for the final camera design.
+* Demonstrate the capability of the camera design to meet the level-C CTA requirements.
+
 
 ### Why not simtelarray?
+
 1. We want something simple - This project is intended to be a simple Python package, avoiding the need to dig into simtelarray code, or the need to account for all the inputs required for a simtelarray production.
 2. We only care about the performance of our camera -  We don't need to worry about ray tracing, array layouts, or other cameras. 
-3. Finer specification of the camera - simtelarray does not allow us to easily investigate some parameters of our camera, such as the real saturation behaviour and ASIC calibration.
-4. Trigger performance - investigating all aspects of trigger performance in simtelarray is difficult (due to lack of "noise events"). Writing a simple simulation package ourselves for this should be very easy.
+3. Finer specification of the camera - Simtelarray does not allow us to easily investigate some parameters of our camera, such as the crosstalk between pixels, and realistic noise spectrum.
+4. Direct control of pixel illumination - Many of the important camera specifications can be examined without Corsika Cherenkov shower and ray tracing simulations. Specifying exactly the average illumination you wish to simulate for each pixel allows more statistics to be gathered with less CPU time.
+5. Trigger performance - Investigating all aspects of trigger performance in simtelarray is difficult (due to lack of "noise events"). This is a simple operation in this package.
 
-## Setup
 
-### Prerequisites
-It is recommended to use a conda environment running Python 3.6 (or above).
-Instructions on how to setup such a conda environment can be found in
-https://forge.in2p3.fr/projects/gct/wiki/Installing_CHEC_Software. The
-required python dependencies (which can be installed using
-`conda install ...` or `pip install ...`) are:
-* numpy
-* scipy
-* astropy (for units)
-* matplotlib
-* tqdm
-* numba
+## Install
 
-### Install
+An environment.yml is provided to setup a conda environment with all the 
+required dependencies.
+
 ```bash
-cd ~/Software
-git clone https://github.com/cta-chec/sstCASSIM.git
-cd sstCASSIM
-conda activate <environment_name>
+git clone https://github.com/sstcam/sstcam-simulation.git
+cd sstcam-simulation
+conda env create -f environment.yml
+conda activate sstcam-simulation
 python setup.py develop
 ```
 
-### Contributing
-Currently pushing directly to this repository is permitted. This will change 
-in the future.
-```bash
-git add ...  # Stage files
-git commit -m  # Create commit
-git push -u origin master  # First time push
-git push  # Future pushes
-```
 
-### Updating local copy
-```bash
-git pull
-```
+## Design
+
+This package does not provide a single pipeline, and is not configured through 
+input files. Users are instead expected to create scripts which piece together the 
+parts of this package they require to obtain the output they are interested in. This 
+provides the user with full control over the camera description, and can avoid 
+performing operations that may be unnecessary for a particular investigation. For 
+example, investigating the trigger rate of a single superpixel from NSB only requires 
+one superpixel to be simulated, and does not require the Cherenkov shower, 
+the waveform sampling, or the backplane trigger to be simulated. As a result, 
+users gain learn how the SST camera operates, instead of working 
+with a black-box simulation. This design also allows the package to be kept 
+extremely simple, requiring no complex configuration or factory classes in 
+order to flexibly define the camera.
+
+Typical scripts that utilise this package are summarised in four steps:
+1. Define the camera (Pulse shape, SPE spectrum, noise spectrum, number of pixels...).
+2. Simulate the photoelectrons (NSB, uniform light, Cherenkov shower ellipse...).
+3. Process the input through the camera electronics to obtain the readout and trigger.
+4. Perform the analysis you require on the camera outputs to investigate the camera performance.
+
+
+## Tutorials
+
+Tutorial notebooks are provided in the tutorials directory, detailing the 
+possible operations this package provides, and also some demonstrations on 
+obtaining camera performance results.
+
+These notebooks can also be ran without installing the package locally, through 
+clicking the Binder badge above.
