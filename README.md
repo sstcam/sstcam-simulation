@@ -51,7 +51,7 @@ order to flexibly define the camera.
 Typical scripts that utilise this package are summarised in four steps:
 1. Define the camera (Pulse shape, SPE spectrum, noise spectrum, number of pixels...).
 2. Simulate the photoelectrons (NSB, uniform light, Cherenkov shower ellipse...).
-3. Process the input through the camera electronics to obtain the readout and trigger.
+3. Acquire the event (readout/trigger) by processing the input through the camera electronics.
 4. Perform the analysis you require on the camera outputs to investigate the camera performance.
 
 
