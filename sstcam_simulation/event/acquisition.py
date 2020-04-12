@@ -249,7 +249,7 @@ class EventAcquisition:
         end = int(start + self.camera.waveform_length * division)
         if start < 0:
             raise ValueError("Digitisation begins before start of readout")
-        if end >= continuous_readout.shape[-1]:
+        if end > continuous_readout.shape[-1]:
             raise ValueError("Digitisation finishes after end of readout")
         readout_slice = continuous_readout[:, start:end]
 
