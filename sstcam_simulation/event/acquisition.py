@@ -214,6 +214,11 @@ class EventAcquisition:
         trigger_pair = neighbours[trigger_where[0]]
         trigger_time = trigger_where[1] + 1  # Plus 1 because of np.diff
 
+        # Sort by time
+        sort = np.argsort(trigger_time)
+        trigger_pair = trigger_pair[sort]
+        trigger_time = trigger_time[sort]
+
         return trigger_time, trigger_pair
 
     def get_sampled_waveform(self, continuous_readout, trigger_time=None):
