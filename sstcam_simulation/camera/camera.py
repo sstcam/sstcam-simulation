@@ -16,6 +16,7 @@ class Camera:
     """
     Container for properties which define the camera
     """
+
     continuous_readout_length: int = 1000  # Unit: nanosecond
     waveform_length: int = 128  # Unit: nanosecond
     trigger_threshold: float = 2  # Unit: photoelectron

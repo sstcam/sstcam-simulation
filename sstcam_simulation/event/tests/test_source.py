@@ -44,7 +44,7 @@ def test_get_cherenkov_shower():
         time_gradient=0,
         time_intercept=20,
         intensity=1000,
-        cherenkov_pulse_width=5
+        cherenkov_pulse_width=5,
     )
 
     camera = Camera()

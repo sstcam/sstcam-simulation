@@ -23,6 +23,7 @@ class Photoelectrons:
         Array specifying the charge reported for each photoelectron
         Shape: (n_photoelectrons)
     """
+
     pixel: np.ndarray
     time: np.ndarray
     charge: np.ndarray
@@ -38,9 +39,9 @@ class Photoelectrons:
 
     def __eq__(self, other):
         return (
-                np.array_equal(self.pixel, other.pixel)
-                & np.array_equal(self.time, other.time)
-                & np.array_equal(self.charge, other.charge)
+            np.array_equal(self.pixel, other.pixel)
+            & np.array_equal(self.time, other.time)
+            & np.array_equal(self.charge, other.charge)
         )
 
     def get_photoelectrons_per_pixel(self, n_pixels):

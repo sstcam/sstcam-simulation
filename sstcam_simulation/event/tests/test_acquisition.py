@@ -1,8 +1,11 @@
 from sstcam_simulation.event.photoelectrons import Photoelectrons
 from sstcam_simulation.camera.noise import GaussianNoise
 from sstcam_simulation.camera.pulse import GaussianPulse
-from sstcam_simulation.event.acquisition import EventAcquisition, sum_superpixels, \
-    add_coincidence_window
+from sstcam_simulation.event.acquisition import (
+    EventAcquisition,
+    sum_superpixels,
+    add_coincidence_window,
+)
 from sstcam_simulation.camera import Camera, PixelMapping
 import numpy as np
 import pytest
@@ -46,9 +49,7 @@ def test_sum_superpixels():
     n_samples = 10
     continuous_readout = np.ones((5, n_samples)) * np.arange(1, 6)[:, None]
     superpixel = np.array([0, 0, 1, 0, 1])
-    superpixel_sum = sum_superpixels(
-        continuous_readout, superpixel, n_superpixels
-    )
+    superpixel_sum = sum_superpixels(continuous_readout, superpixel, n_superpixels)
     assert superpixel_sum.shape == (n_superpixels, n_samples)
     assert np.array_equal(superpixel_sum[0], np.full(10, 7))
     assert np.array_equal(superpixel_sum[1], np.full(10, 8))
@@ -221,4 +222,3 @@ def test_sample_waveform():
     assert waveform.shape == (n_pixels, n_samples)
     assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
     assert waveform[0].argmax() == sample(20.0)
-

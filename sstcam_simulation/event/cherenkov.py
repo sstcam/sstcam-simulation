@@ -1,6 +1,7 @@
 from astropy import units as u
 from astropy.coordinates import Angle
 import warnings
+
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     from ctapipe.image.toymodel import Gaussian
@@ -11,8 +12,9 @@ __all__ = [
 ]
 
 
-def get_cherenkov_shower_image(xpix, ypix, centroid_x, centroid_y, length, width,
-                               psi, time_gradient, time_intercept):
+def get_cherenkov_shower_image(
+    xpix, ypix, centroid_x, centroid_y, length, width, psi, time_gradient, time_intercept
+):
     """
     Obtain the PDF and time images for a Cherenkov shower ellipse
 

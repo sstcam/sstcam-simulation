@@ -74,7 +74,7 @@ def sipm_gentile_spe(x, spe_sigma, opct):
     pe_signal = np.zeros(x.size)
     # Loop over the possible total number of cells fired
     for k in range(1, 250):
-        pk = (1-opct) * pow(opct, k-1)
+        pk = (1 - opct) * pow(opct, k - 1)
         pe_sigma = np.sqrt(k * spe_sigma ** 2)
         pe_signal += pk * normal_pdf(x, k, pe_sigma)
 

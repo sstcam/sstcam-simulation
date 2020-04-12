@@ -4,11 +4,7 @@ from scipy.ndimage import convolve1d
 from numba import guvectorize, float64, boolean
 
 
-__all__ = [
-    "sum_superpixels",
-    "add_coincidence_window",
-    "EventAcquisition"
-]
+__all__ = ["sum_superpixels", "add_coincidence_window", "EventAcquisition"]
 
 
 def sum_superpixels(continuous_readout, superpixel, n_superpixels):
@@ -149,9 +145,7 @@ class EventAcquisition:
         # Sum superpixel readouts
         superpixel = self.camera.pixel.superpixel
         n_superpixels = self.camera.superpixel.n_superpixels
-        superpixel_sum = sum_superpixels(
-            continuous_readout, superpixel, n_superpixels
-        )
+        superpixel_sum = sum_superpixels(continuous_readout, superpixel, n_superpixels)
 
         # Discriminate superpixel readout with threshold
         # (First convert threshold to sample units, i.e. p.e./ns)

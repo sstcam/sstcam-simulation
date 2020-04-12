@@ -38,6 +38,7 @@ class PerfectElectronics(ElectronicNoise):
     """
     Perfect readout electronics that do not add any noise
     """
+
     def add_to_readout(self, readout):
         return readout
 

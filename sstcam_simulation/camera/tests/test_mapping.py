@@ -1,5 +1,8 @@
-from sstcam_simulation.camera.mapping import get_neighbours, PixelMapping, \
-    SuperpixelMapping
+from sstcam_simulation.camera.mapping import (
+    get_neighbours,
+    PixelMapping,
+    SuperpixelMapping,
+)
 import numpy as np
 
 
@@ -8,15 +11,13 @@ def test_get_neighbours():
     col = np.array([0, 1, 0, 1, 1])
 
     neighbours = get_neighbours(row, col, False)
-    neighbours_expected = np.array([
-        [0, 1], [0, 2], [1, 3], [2, 3], [3, 4]
-    ])
+    neighbours_expected = np.array([[0, 1], [0, 2], [1, 3], [2, 3], [3, 4]])
     assert np.array_equal(neighbours, neighbours_expected)
 
     neighbours = get_neighbours(row, col, True)
-    neighbours_expected = np.array([
-        [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4]
-    ])
+    neighbours_expected = np.array(
+        [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3], [2, 4], [3, 4]]
+    )
     assert np.array_equal(neighbours, neighbours_expected)
 
     # Single Pixel

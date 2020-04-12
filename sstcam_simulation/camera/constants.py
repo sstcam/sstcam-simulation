@@ -1,4 +1,3 @@
-
 __all__ = [
     "SAMPLE_WIDTH",
     "CONTINUOUS_SAMPLE_DIVISION",

@@ -3,9 +3,7 @@ from ..camera import Camera
 from .photoelectrons import Photoelectrons
 from .cherenkov import get_cherenkov_shower_image
 
-__all__ = [
-    "PhotoelectronSource"
-]
+__all__ = ["PhotoelectronSource"]
 
 
 class PhotoelectronSource:
@@ -101,9 +99,18 @@ class PhotoelectronSource:
 
         return Photoelectrons(pixel=pixel, time=time, charge=charge)
 
-    def get_cherenkov_shower(self, centroid_x, centroid_y, length, width, psi,
-                             time_gradient, time_intercept, intensity,
-                             cherenkov_pulse_width=3):
+    def get_cherenkov_shower(
+        self,
+        centroid_x,
+        centroid_y,
+        length,
+        width,
+        psi,
+        time_gradient,
+        time_intercept,
+        intensity,
+        cherenkov_pulse_width=3,
+    ):
         """
         Simulate a Cherenkov shower image
 
@@ -137,8 +144,15 @@ class PhotoelectronSource:
         rng = np.random.default_rng(seed=self.seed)
 
         image_pe_pdf, image_time = get_cherenkov_shower_image(
-            self.camera.pixel.x, self.camera.pixel.y, centroid_x, centroid_y,
-            length, width, psi, time_gradient, time_intercept
+            self.camera.pixel.x,
+            self.camera.pixel.y,
+            centroid_x,
+            centroid_y,
+            length,
+            width,
+            psi,
+            time_gradient,
+            time_intercept,
         )
 
         # Obtain number of photoelectrons generated in each pixel
@@ -191,5 +205,5 @@ class PhotoelectronSource:
             time_gradient=time_gradient,
             time_intercept=time_intercept,
             intensity=intensity,
-            cherenkov_pulse_width=cherenkov_pulse_width
+            cherenkov_pulse_width=cherenkov_pulse_width,
         )
