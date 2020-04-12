@@ -21,7 +21,8 @@ setup(
         'numba',
         'h5py',
         'PyYAML',
-        'ctapipe>=0.7'
+        'ctapipe>=0.7',
+        'git+https://github.com/sstcam/CHECLabPy#egg=CHECLabPy',
     ],
     setup_requires=['pytest-runner', ],
     tests_require=['pytest', ],
