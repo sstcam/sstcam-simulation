@@ -58,3 +58,6 @@ class Camera:
 
     def update_trigger_threshold(self, trigger_threshold):
         super().__setattr__('trigger_threshold', trigger_threshold)
+
+    def update_coincidence_window(self, coincidence_window):
+        super().__setattr__('coincidence_window', coincidence_window)

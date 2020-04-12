@@ -129,8 +129,9 @@ class EventAcquisition:
     def get_digital_trigger_readout(self, continuous_readout):
         """
         Obtain the digital trigger readout, based on if the continuous readout
-        is above the trigger threshold, and extending the resulting boolean
-        array to account for the coincidence window
+        (summed across each superpixel) is above the trigger threshold, and
+        extending the resulting boolean array to account for the coincidence
+        window
 
         Parameters
         ----------
@@ -217,11 +218,11 @@ class EventAcquisition:
             np.diff(neighbour_coincidence.astype(np.int), axis=1) == 1
         )
         trigger_pair = neighbours[trigger_where[0]]
-        trigger_time = trigger_where[1]
+        trigger_time = trigger_where[1] + 1  # Plus 1 because of np.diff
 
         return trigger_time, trigger_pair
 
-    def sample_readout(self, continuous_readout, trigger_time=None):
+    def get_sampled_waveform(self, continuous_readout, trigger_time=None):
         """
         Sample the continuous readout into a waveform
 

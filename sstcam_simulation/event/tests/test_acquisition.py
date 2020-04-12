@@ -144,7 +144,7 @@ def test_get_backplane_trigger():
     trigger_time, trigger_pair = acquisition.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (2,)
     assert trigger_pair.shape == (2, 2)
-    assert np.array_equal(trigger_time, np.array([11, 21]))
+    assert np.array_equal(trigger_time, np.array([12, 22]))
     assert np.array_equal(trigger_pair, np.array([[0, 1], [2, 3]]))
 
     # Single pixel
@@ -175,21 +175,21 @@ def test_sample_waveform():
     continuous_readout[0, csample(30.0):csample(30.5)] = 100
     continuous_readout[2, csample(40.0):csample(41.0)] = 100
 
-    waveform = acquisition.sample_readout(continuous_readout)
+    waveform = acquisition.get_sampled_waveform(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
     assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
     assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
     assert waveform[0].argmax() == sample(30.0)
     assert waveform[2].argmax() == sample(40.0)
 
-    waveform = acquisition.sample_readout(continuous_readout, 30)
+    waveform = acquisition.get_sampled_waveform(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
     assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
     assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
     assert waveform[0].argmax() == sample(20.0)
     assert waveform[2].argmax() == sample(30.0)
 
-    waveform = acquisition.sample_readout(continuous_readout, 25)
+    waveform = acquisition.get_sampled_waveform(continuous_readout, 25)
     assert waveform.shape == (n_pixels, n_samples)
     assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
     assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
@@ -198,9 +198,9 @@ def test_sample_waveform():
 
     # Out of bounds
     with pytest.raises(ValueError):
-        acquisition.sample_readout(continuous_readout, 10)
+        acquisition.get_sampled_waveform(continuous_readout, 10)
     with pytest.raises(ValueError):
-        acquisition.sample_readout(continuous_readout, 900)
+        acquisition.get_sampled_waveform(continuous_readout, 900)
 
     # Single Pixel
     camera = Camera(pixel=PixelMapping(n_pixels=1))
@@ -212,12 +212,12 @@ def test_sample_waveform():
     continuous_readout = np.zeros((n_pixels, n_continuous_samples))
     continuous_readout[0, csample(30.0):csample(30.5)] = 100
 
-    waveform = acquisition.sample_readout(continuous_readout)
+    waveform = acquisition.get_sampled_waveform(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
     assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
     assert waveform[0].argmax() == sample(30.0)
 
-    waveform = acquisition.sample_readout(continuous_readout, 30)
+    waveform = acquisition.get_sampled_waveform(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
     assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
     assert waveform[0].argmax() == sample(20.0)
