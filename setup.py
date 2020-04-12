@@ -22,7 +22,7 @@ setup(
         'h5py',
         'PyYAML',
         'ctapipe>=0.7',
-        'git+https://github.com/sstcam/CHECLabPy#egg=CHECLabPy',
+        'CHECLabPy @ git+https://github.com/sstcam/CHECLabPy@master',
     ],
     setup_requires=['pytest-runner', ],
     tests_require=['pytest', ],
