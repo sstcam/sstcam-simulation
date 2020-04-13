@@ -161,16 +161,15 @@ def test_get_backplane_trigger():
     assert trigger_pair.shape == (0, 2)
 
 
-def test_sample_waveform():
+def test_get_sampled_waveform():
     camera = Camera()
     acquisition = EventAcquisition(camera=camera)
     n_pixels = camera.pixel.n_pixels
     time_axis = camera.continuous_time_axis
     n_continuous_samples = time_axis.size
-    n_samples = camera.waveform_length * camera.sample_width
+    n_samples = camera.n_waveform_samples
     sample = camera.get_waveform_sample_from_time
     csample = camera.get_continuous_readout_sample_from_time
-    width = camera.sample_width
     cwidth = camera.continuous_sample_width
     continuous_readout = np.zeros((n_pixels, n_continuous_samples))
     continuous_readout[0, csample(30.0):csample(30.5)] = 100
@@ -178,22 +177,22 @@ def test_sample_waveform():
 
     waveform = acquisition.get_sampled_waveform(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
-    assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
+    assert waveform[2].sum() == continuous_readout[2].sum() / cwidth
     assert waveform[0].argmax() == sample(30.0)
     assert waveform[2].argmax() == sample(40.0)
 
     waveform = acquisition.get_sampled_waveform(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
-    assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
+    assert waveform[2].sum() == continuous_readout[2].sum() / cwidth
     assert waveform[0].argmax() == sample(20.0)
     assert waveform[2].argmax() == sample(30.0)
 
     waveform = acquisition.get_sampled_waveform(continuous_readout, 25)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
-    assert waveform[2].sum() * width == continuous_readout[2].sum() * cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
+    assert waveform[2].sum() == continuous_readout[2].sum() / cwidth
     assert waveform[0].argmax() == sample(25.0)
     assert waveform[2].argmax() == sample(35.0)
 
@@ -215,10 +214,22 @@ def test_sample_waveform():
 
     waveform = acquisition.get_sampled_waveform(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
     assert waveform[0].argmax() == sample(30.0)
 
     waveform = acquisition.get_sampled_waveform(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() * width == continuous_readout[0].sum() * cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
     assert waveform[0].argmax() == sample(20.0)
+
+
+def test_get_sampled_waveform_sample_width():
+    camera = Camera(
+        pixel=PixelMapping(n_pixels=1),
+    )
+    pe = Photoelectrons(pixel=np.array([0]), time=np.array([40]), charge=np.array([1]))
+    acquisition = EventAcquisition(camera=camera, seed=1)
+    readout = acquisition.get_continuous_readout(pe)
+    waveform = acquisition.get_sampled_waveform(readout)
+    print(waveform.max())
+    # raise ValueError

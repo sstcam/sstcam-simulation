@@ -98,6 +98,7 @@ class EventAcquisition:
         convolved : ndarray
             Array emulating continuous readout from the camera, with the
             photoelectrons convolved with the reference pulse shape
+            Units: photoelectrons / ns
             Shape: (n_pixels, n_continuous_readout_samples)
         """
         # Samples corresponding to the photoelectron time
@@ -239,13 +240,19 @@ class EventAcquisition:
         -------
         waveform : ndarray
             Sampled waveform
+            Units: photoelectrons
             Shape: (n_pixels, n_samples)
         """
         # Define start and end of waveform
         division = self.camera.continuous_sample_division
         lookback_time = self.camera.lookback_time
-        start = 0 if trigger_time is None else int((trigger_time-lookback_time)*division)
-        end = int(start + self.camera.waveform_length * division)
+        if trigger_time is None:
+            start_time = 0
+        else:
+            start_time = trigger_time - lookback_time
+        start = self.camera.get_continuous_readout_sample_from_time(start_time)
+        end = int(start + self.camera.n_waveform_samples * division)
+
         if start < 0:
             raise ValueError("Digitisation begins before start of readout")
         if end > continuous_readout.shape[-1]:
@@ -258,6 +265,6 @@ class EventAcquisition:
         n_samples = n_readout_samples // division
         waveform = readout_slice.reshape(
             (n_pixels, n_samples, division)
-        ).sum(-1) / division
+        ).sum(-1) / self.camera.continuous_sample_width
 
         return waveform
