@@ -177,22 +177,22 @@ def test_get_sampled_waveform():
 
     waveform = acquisition.get_sampled_waveform(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
-    assert waveform[2].sum() == continuous_readout[2].sum() / cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() * cwidth
+    assert waveform[2].sum() == continuous_readout[2].sum() * cwidth
     assert waveform[0].argmax() == sample(30.0)
     assert waveform[2].argmax() == sample(40.0)
 
     waveform = acquisition.get_sampled_waveform(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
-    assert waveform[2].sum() == continuous_readout[2].sum() / cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() * cwidth
+    assert waveform[2].sum() == continuous_readout[2].sum() * cwidth
     assert waveform[0].argmax() == sample(20.0)
     assert waveform[2].argmax() == sample(30.0)
 
     waveform = acquisition.get_sampled_waveform(continuous_readout, 25)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
-    assert waveform[2].sum() == continuous_readout[2].sum() / cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() * cwidth
+    assert waveform[2].sum() == continuous_readout[2].sum() * cwidth
     assert waveform[0].argmax() == sample(25.0)
     assert waveform[2].argmax() == sample(35.0)
 
@@ -214,12 +214,12 @@ def test_get_sampled_waveform():
 
     waveform = acquisition.get_sampled_waveform(continuous_readout)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() * cwidth
     assert waveform[0].argmax() == sample(30.0)
 
     waveform = acquisition.get_sampled_waveform(continuous_readout, 30)
     assert waveform.shape == (n_pixels, n_samples)
-    assert waveform[0].sum() == continuous_readout[0].sum() / cwidth
+    assert waveform[0].sum() == continuous_readout[0].sum() * cwidth
     assert waveform[0].argmax() == sample(20.0)
 
 

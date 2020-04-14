@@ -59,8 +59,8 @@ def sipm_gentile_spe(x, spe_sigma, opct):
     """
     SiPM SPE spectrum, modified from Gentile 2010
     http://adsabs.harvard.edu/abs/2010arXiv1006.3263G
-    (modified to ignore afterpulsing contributions,  which are minimal with
-    the SST camera silicon)
+    (modified to ignore afterpulsing contributions,  which are minimal for
+    the SST camera silicon photomultipliers)
 
     Parameters
     ----------

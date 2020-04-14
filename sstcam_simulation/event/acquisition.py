@@ -265,6 +265,6 @@ class EventAcquisition:
         n_samples = n_readout_samples // division
         waveform = readout_slice.reshape(
             (n_pixels, n_samples, division)
-        ).sum(-1) / self.camera.continuous_sample_width
+        ).sum(-1) * self.camera.continuous_sample_width
 
         return waveform
