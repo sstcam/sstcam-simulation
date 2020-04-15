@@ -9,7 +9,8 @@ __all__ = [
 @dataclass
 class Photoelectrons:
     """
-    Container for the properties of the photoelectrons that occur in an event
+    Container for the photoelectron arrays. These are arrays which describe
+    the pixel, arrival time, and reported charge of each photoelectron.
 
     Attributes
     ----------
@@ -45,13 +46,16 @@ class Photoelectrons:
         )
 
     def get_photoelectrons_per_pixel(self, n_pixels):
-        """Number of photoelectrons in each photosensor pixel"""
+        """Integer count of photoelectrons in each photosensor pixel"""
         pixel_photoelectrons = np.zeros(n_pixels, dtype=np.int)
         np.add.at(pixel_photoelectrons, self.pixel, 1)
         return pixel_photoelectrons
 
     def get_charge_per_pixel(self, n_pixels):
-        """Total charge (in units of p.e.) reported by each photosensor pixel"""
+        """
+        Total sum of charge (in units of p.e.) reported by each photosensor pixel
+        (resulting from the SPE spectrum)
+        """
         pixel_charge = np.zeros(n_pixels)
         np.add.at(pixel_charge, self.pixel, self.charge)
         return pixel_charge

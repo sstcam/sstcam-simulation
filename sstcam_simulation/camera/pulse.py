@@ -1,4 +1,4 @@
-from .constants import CONTINUOUS_SAMPLE_WIDTH
+from .constants import CONTINUOUS_READOUT_SAMPLE_WIDTH
 from abc import ABCMeta, abstractmethod
 import numpy as np
 from scipy.stats import norm
@@ -24,9 +24,9 @@ class ReferencePulse(metaclass=ABCMeta):
         length : int
             Length of the reference pulse in nanoseconds
         """
-        self.time = np.arange(0, length, CONTINUOUS_SAMPLE_WIDTH)
+        self.time = np.arange(0, length, CONTINUOUS_READOUT_SAMPLE_WIDTH)
         pulse = self._function(self.time)
-        self.y_scale = pulse.sum() * CONTINUOUS_SAMPLE_WIDTH
+        self.y_scale = pulse.sum() * CONTINUOUS_READOUT_SAMPLE_WIDTH
         self.pulse = pulse / self.y_scale
         self.origin = self.pulse.argmax() - self.pulse.size // 2
         self.peak_height = self.pulse.max()  # Units: 1 / ns

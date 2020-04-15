@@ -23,8 +23,8 @@ def test_get_continuous_readout(acquisition):
         pixel=np.array([0, 1]), time=np.array([30, 40]), charge=np.array([1.0, 2.0])
     )
     readout = acquisition.get_continuous_readout(photoelectrons)
-    integral = readout.sum(1) * acquisition.camera.continuous_sample_width
-    argmax = readout.argmax(1) * acquisition.camera.continuous_sample_width
+    integral = readout.sum(1) * acquisition.camera.continuous_readout_sample_width
+    argmax = readout.argmax(1) * acquisition.camera.continuous_readout_sample_width
     np.testing.assert_allclose(integral, photoelectrons.charge)
     np.testing.assert_allclose(argmax, photoelectrons.time)
 
@@ -57,9 +57,9 @@ def test_sum_superpixels():
 
 def test_add_coincidence_window(acquisition):
     n_pixels = acquisition.camera.pixel.n_pixels
-    time_axis = acquisition.camera.continuous_time_axis
+    time_axis = acquisition.camera.continuous_readout_time_axis
     n_samples = time_axis.size
-    division = acquisition.camera.continuous_sample_division
+    division = acquisition.camera.continuous_readout_sample_division
     window = acquisition.camera.coincidence_window * division
     above_threshold = np.zeros((n_pixels, n_samples), dtype=np.bool)
     above_threshold[0, 100:101] = True
@@ -84,9 +84,9 @@ def test_update_trigger_threshold():
 def test_get_digital_trigger_readout(acquisition):
     n_pixels = acquisition.camera.pixel.n_pixels
     n_superpixels = acquisition.camera.superpixel.n_superpixels
-    time_axis = acquisition.camera.continuous_time_axis
+    time_axis = acquisition.camera.continuous_readout_time_axis
     n_samples = time_axis.size
-    division = acquisition.camera.continuous_sample_division
+    division = acquisition.camera.continuous_readout_sample_division
     window = acquisition.camera.coincidence_window * division
     continuous_readout = np.zeros((n_pixels, n_samples))
     continuous_readout[0, 100:101] = 100
@@ -97,13 +97,13 @@ def test_get_digital_trigger_readout(acquisition):
     trigger_readout_expected[0, 100:101+window] = True
     trigger_readout_expected[0, 200:500+window] = True
     trigger_readout_expected[0, 510:520+window] = True
-    trigger_readout = acquisition.get_digital_trigger_readout(continuous_readout)
+    trigger_readout = acquisition.get_superpixel_digital_trigger_line(continuous_readout)
     assert np.array_equal(trigger_readout, trigger_readout_expected)
 
 
 def test_get_n_superpixel_triggers(acquisition):
     n_superpixels = 2
-    n_samples = acquisition.camera.continuous_time_axis.size
+    n_samples = acquisition.camera.continuous_readout_time_axis.size
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
     trigger_readout[0, 10] = True
     trigger_readout[0, 15] = True
@@ -118,7 +118,7 @@ def test_get_backplane_trigger():
     camera = Camera()
     acquisition = EventAcquisition(camera=camera)
     n_superpixels = camera.superpixel.n_superpixels
-    n_samples = camera.continuous_time_axis.size
+    n_samples = camera.continuous_readout_time_axis.size
     csample = camera.get_continuous_readout_sample_from_time
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
     trigger_time, trigger_pair = acquisition.get_backplane_trigger(trigger_readout)
@@ -152,7 +152,7 @@ def test_get_backplane_trigger():
     camera = Camera(pixel=PixelMapping(n_pixels=1))
     acquisition = EventAcquisition(camera=camera)
     n_superpixels = camera.superpixel.n_superpixels
-    n_samples = camera.continuous_time_axis.size
+    n_samples = camera.continuous_readout_time_axis.size
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
     trigger_readout[0, 10:20] = True
     trigger_readout[0, 100:125] = True
@@ -165,12 +165,12 @@ def test_get_sampled_waveform():
     camera = Camera()
     acquisition = EventAcquisition(camera=camera)
     n_pixels = camera.pixel.n_pixels
-    time_axis = camera.continuous_time_axis
+    time_axis = camera.continuous_readout_time_axis
     n_continuous_samples = time_axis.size
     n_samples = camera.n_waveform_samples
     sample = camera.get_waveform_sample_from_time
     csample = camera.get_continuous_readout_sample_from_time
-    cwidth = camera.continuous_sample_width
+    cwidth = camera.continuous_readout_sample_width
     continuous_readout = np.zeros((n_pixels, n_continuous_samples))
     continuous_readout[0, csample(30.0):csample(30.5)] = 100
     continuous_readout[2, csample(40.0):csample(41.0)] = 100
@@ -206,9 +206,9 @@ def test_get_sampled_waveform():
     camera = Camera(pixel=PixelMapping(n_pixels=1))
     acquisition = EventAcquisition(camera=camera)
     n_pixels = camera.pixel.n_pixels
-    time_axis = camera.continuous_time_axis
+    time_axis = camera.continuous_readout_time_axis
     n_continuous_samples = time_axis.size
-    n_samples = camera.waveform_length * camera.sample_width
+    n_samples = camera.waveform_duration * camera.waveform_sample_width
     continuous_readout = np.zeros((n_pixels, n_continuous_samples))
     continuous_readout[0, csample(30.0):csample(30.5)] = 100
 

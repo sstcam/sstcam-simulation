@@ -10,8 +10,11 @@ class PhotoelectronSource:
     def __init__(self, camera, seed=None):
         """
         Collection of methods which simulate illumination sources and the
-        detection of the photons by the photosensors, providing photoelectron
-        arrays
+        detection of the photons by the photosensors.
+
+        Each method returns a :class:`Photoelectrons` object, which is a
+        container of 1D arrays describing the pixel, arrival time, and
+        reported charge of each photoelectron.
 
         Parameters
         ----------
@@ -42,7 +45,7 @@ class PhotoelectronSource:
         rng = np.random.default_rng(seed=self.seed)
 
         # Number of NSB photoelectrons per pixel in this event
-        length = self.camera.continuous_readout_length
+        length = self.camera.continuous_readout_duration
         n_pixels = self.camera.pixel.n_pixels
         avg_photons_per_waveform = rate * 1e6 * length * 1e-9
         n_nsb_per_pixel = rng.poisson(avg_photons_per_waveform, n_pixels)
@@ -52,7 +55,7 @@ class PhotoelectronSource:
 
         # Uniformly distribute NSB photoelectrons in time across waveform
         n_photoelectrons = nsb_pixel.size
-        time_axis = self.camera.continuous_time_axis
+        time_axis = self.camera.continuous_readout_time_axis
         nsb_time = rng.choice(time_axis, size=n_photoelectrons)
 
         # Get the charge reported by the photosensor (Inverse Transform Sampling)
@@ -61,7 +64,7 @@ class PhotoelectronSource:
 
         return Photoelectrons(pixel=nsb_pixel, time=nsb_time, charge=nsb_charge)
 
-    def get_uniform_illumination(self, time, illumination, pulse_width=0):
+    def get_uniform_illumination(self, time, illumination, laser_pulse_width=0):
         """
         Simulate the camera being illuminated by a uniform light (which already
         accounts for the focal plane curvature).
@@ -72,7 +75,7 @@ class PhotoelectronSource:
             Arrival time of the light at the focal plane
         illumination : float
             Average illumination in number of photoelectrons
-        pulse_width : float
+        laser_pulse_width : float
             Width of the pulse from the illumination source
 
         Returns
@@ -91,7 +94,7 @@ class PhotoelectronSource:
 
         # Time of arrival for each photoelectron
         n_photoelectrons = pixel.size
-        time = rng.normal(time, pulse_width, n_photoelectrons)
+        time = rng.normal(time, laser_pulse_width, n_photoelectrons)
 
         # Get the charge reported by the photosensor (Inverse Transform Sampling)
         spectrum = self.camera.photoelectron_spectrum
@@ -194,7 +197,7 @@ class PhotoelectronSource:
         length = rng.uniform(width, 0.1)
         psi = rng.uniform(0, 360)
         time_gradient = rng.uniform(-20, 20)
-        time_intercept = rng.uniform(0, self.camera.continuous_readout_length)
+        time_intercept = rng.uniform(0, self.camera.continuous_readout_duration)
         intensity = rng.uniform(100, 100000)
         return self.get_cherenkov_shower(
             centroid_x=centroid_x,

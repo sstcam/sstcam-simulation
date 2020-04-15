@@ -103,12 +103,12 @@ class EventAcquisition:
         """
         # Samples corresponding to the photoelectron time
         time = photoelectrons.time
-        sample = (time / self.camera.continuous_sample_width).astype(np.int)
+        sample = (time / self.camera.continuous_readout_sample_width).astype(np.int)
 
         # Add photoelectrons to the readout array
         pixel = photoelectrons.pixel
         charge = photoelectrons.charge
-        n_samples = self.camera.continuous_time_axis.size
+        n_samples = self.camera.continuous_readout_time_axis.size
         continuous_readout = np.zeros((self.camera.pixel.n_pixels, n_samples))
         np.add.at(continuous_readout, (pixel, sample), charge)
 
@@ -123,12 +123,12 @@ class EventAcquisition:
 
         return noisy
 
-    def get_digital_trigger_readout(self, continuous_readout):
+    def get_superpixel_digital_trigger_line(self, continuous_readout):
         """
-        Obtain the digital trigger readout, based on if the continuous readout
-        (summed across each superpixel) is above the trigger threshold, and
-        extending the resulting boolean array to account for the coincidence
-        window
+        Obtain the boolean digital trigger line for each superpixel, based on
+        if the continuous readout (summed across each superpixel) is above the
+        trigger threshold, and extending the resulting boolean array to
+        account for the coincidence window
 
         Parameters
         ----------
@@ -155,21 +155,21 @@ class EventAcquisition:
         above_threshold = superpixel_sum >= threshold
 
         # Extend by coincidence window length
-        division = self.camera.continuous_sample_division
+        division = self.camera.continuous_readout_sample_division
         coincidence_samples = self.camera.coincidence_window * division
         digital_trigger = add_coincidence_window(above_threshold, coincidence_samples)
 
         return digital_trigger
 
     @staticmethod
-    def get_n_superpixel_triggers(digital_trigger_readout):
+    def get_n_superpixel_triggers(digital_trigger_line):
         """
         Count the number of rising-edge threshold-crossings in the
-        digital trigger readout
+        superpixel digital trigger line
 
         Parameters
         ----------
-        digital_trigger_readout : ndarray
+        digital_trigger_line : ndarray
             Boolean array indicating where each superpixel line is "high" (True)
             Shape: (n_superpixels, n_continuous_readout_samples)
 
@@ -178,16 +178,16 @@ class EventAcquisition:
         ndarray
             Number of triggers in the digital signal readout per superpixel
         """
-        return np.sum(np.diff(digital_trigger_readout.astype(np.int)) == 1, axis=1)
+        return np.sum(np.diff(digital_trigger_line.astype(np.int)) == 1, axis=1)
 
-    def get_backplane_trigger(self, digital_trigger_readout):
+    def get_backplane_trigger(self, digital_trigger_line):
         """
         Get the triggers generated on the backplane by looking for coincidences
-        in the digital trigger readout from neighbouring superpixels
+        in the digital trigger line from neighbouring superpixels
 
         Parameters
         ----------
-        digital_trigger_readout : ndarray
+        digital_trigger_line : ndarray
             Boolean array indicating where each superpixel line is "high" (True)
             Shape: (n_superpixels, n_continuous_readout_samples)
 
@@ -201,8 +201,8 @@ class EventAcquisition:
             Shape: (n_triggers, 2)
         """
         # Backplane clocks in the trigger every nanosecond
-        division = self.camera.continuous_sample_division
-        sampled = digital_trigger_readout[:, ::division]
+        division = self.camera.continuous_readout_sample_division
+        sampled = digital_trigger_line[:, ::division]
 
         # Find coincident high trigger lines between neighbouring superpixels
         neighbours = self.camera.superpixel.neighbours
@@ -244,7 +244,7 @@ class EventAcquisition:
             Shape: (n_pixels, n_samples)
         """
         # Define start and end of waveform
-        division = self.camera.continuous_sample_division
+        division = self.camera.continuous_readout_sample_division
         lookback_time = self.camera.lookback_time
         if trigger_time is None:
             start_time = 0
@@ -260,11 +260,11 @@ class EventAcquisition:
         readout_slice = continuous_readout[:, start:end]
 
         # Sum readout into samples
-        division = self.camera.continuous_sample_division
+        division = self.camera.continuous_readout_sample_division
         n_pixels, n_readout_samples = readout_slice.shape
         n_samples = n_readout_samples // division
         waveform = readout_slice.reshape(
             (n_pixels, n_samples, division)
-        ).sum(-1) * self.camera.continuous_sample_width
+        ).sum(-1) * self.camera.continuous_readout_sample_width
 
         return waveform
