@@ -73,3 +73,12 @@ clicking the Binder badge above.
 * `continuous_readout` : Finely sampled array emulating continuous readout from the photosensor. Photoelectrons which arrive during the readout are convolved with the reference pulse shape of the camera. Integral of the readout equals the total charge in p.e..
 * `digital_trigger_line` : Boolean output from each superpixel, indicating if the line is "high" (above threshold)
 * `waveform` : Sampled waveform, resulting from integrating the continuous readout across bins of typically 1 ns in width. Sum of waveform samples equals the total charge in p.e..
+
+
+## Schematic
+
+A schematic of the package, the simulation chain, and how its classes map to the components of the SST camera is shown below:
+
+![image](https://user-images.githubusercontent.com/17825673/79463069-a7ad7080-7ff8-11ea-8772-2496a42d2259.png)
+
+
