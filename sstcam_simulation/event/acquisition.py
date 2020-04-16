@@ -86,7 +86,14 @@ class EventAcquisition:
     def get_continuous_readout(self, photoelectrons):
         """
         Obtain the sudo-continuous readout from the camera for the given
-        photoelectrons (signal and background) in this event
+        photoelectrons (signal and background) in this event.
+
+        This is built by convolving the reference pulse shape of the camera
+        with the arrival times and charge of the photoelectrons provided.
+        Electronic noise is also included at this stage.
+
+        The integral of this readout provides the total charge of the
+        photoelectrons that arrived during the readout (in p.e. units).
 
         Parameters
         ----------
@@ -224,7 +231,11 @@ class EventAcquisition:
 
     def get_sampled_waveform(self, continuous_readout, trigger_time=None):
         """
-        Sample the continuous readout into a waveform
+        Sample the continuous readout by integrating over nanosecond bin
+        widths, to produce a sampled waveform.
+
+        The sum of all samples in the waveform provides the total charge that
+        occurred within the waveform's duration (in p.e. units).
 
         Parameters
         ----------

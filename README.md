@@ -64,3 +64,12 @@ obtaining camera performance results.
 
 These notebooks can also be ran without installing the package locally, through 
 clicking the Binder badge above.
+
+
+## Common components
+
+* `n_photoelectrons` : Integer number of photoelectrons
+* `photoelectron_charge` : Floating point charge that is reported by the photosensor when a photoelectron is generated. PDF of the charge measured is defined by the photosensor's photoelectron spectrum. Units: photoelectrons. The average result when repeatedly summing the charge of N photoelectrons is N p.e..
+* `continuous_readout` : Finely sampled array emulating continuous readout from the photosensor. Photoelectrons which arrive during the readout are convolved with the reference pulse shape of the camera. Integral of the readout equals the total charge in p.e..
+* `digital_trigger_line` : Boolean output from each superpixel, indicating if the line is "high" (above threshold)
+* `waveform` : Sampled waveform, resulting from integrating the continuous readout across bins of typically 1 ns in width. Sum of waveform samples equals the total charge in p.e..
