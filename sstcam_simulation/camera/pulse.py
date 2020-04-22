@@ -2,7 +2,6 @@ from .constants import CONTINUOUS_READOUT_SAMPLE_WIDTH
 from abc import ABCMeta, abstractmethod
 import numpy as np
 from scipy.stats import norm
-from scipy.optimize import brent
 
 __all__ = [
     "ReferencePulse",
@@ -12,7 +11,7 @@ __all__ = [
 
 
 class ReferencePulse(metaclass=ABCMeta):
-    def __init__(self, length):
+    def __init__(self, duration):
         """
         Base for classes which define a reference pulse shape
 
@@ -21,10 +20,10 @@ class ReferencePulse(metaclass=ABCMeta):
 
         Parameters
         ----------
-        length : int
-            Length of the reference pulse in nanoseconds
+        duration : int
+            Duration of the reference pulse in nanoseconds
         """
-        self.time = np.arange(0, length, CONTINUOUS_READOUT_SAMPLE_WIDTH)
+        self.time = np.arange(0, duration, CONTINUOUS_READOUT_SAMPLE_WIDTH)
         pulse = self._function(self.time)
         self.y_scale = pulse.sum() * CONTINUOUS_READOUT_SAMPLE_WIDTH
         self.pulse = pulse / self.y_scale
@@ -65,15 +64,15 @@ class GenericPulse(ReferencePulse):
         """
         self.interp_time = time
         self.interp_value = value
-        length = np.round(time[-1])
-        super().__init__(length=length)
+        duration = np.round(time[-1])
+        super().__init__(duration=duration)
 
     def _function(self, time):
         return np.interp(time, xp=self.interp_time, fp=self.interp_value)
 
 
 class GaussianPulse(ReferencePulse):
-    def __init__(self, mean=30, sigma=6, length=60):
+    def __init__(self, mean=10, sigma=3, duration=20):
         """
         Simple gaussian reference pulse
 
@@ -83,12 +82,12 @@ class GaussianPulse(ReferencePulse):
             Time (ns) corresponding to centre of pulse
         sigma : u.Quantity[time]
             Standard deviation of pulse (ns)
-        length : int
+        duration : int
             Length of the reference pulse in nanoseconds
         """
         self.mean = mean
         self.sigma = sigma
-        super().__init__(length)
+        super().__init__(duration)
 
     def _function(self, time):
         return norm.pdf(time, loc=self.mean, scale=self.sigma)
