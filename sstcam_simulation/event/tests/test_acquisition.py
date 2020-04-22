@@ -6,14 +6,14 @@ from sstcam_simulation.event.acquisition import (
     sum_superpixels,
     add_coincidence_window,
 )
-from sstcam_simulation.camera import Camera, PixelMapping
+from sstcam_simulation.camera import Camera, SSTCameraMapping
 import numpy as np
 import pytest
 
 
 @pytest.fixture(scope="module")
 def acquisition():
-    camera = Camera(pixel=PixelMapping(n_pixels=2))
+    camera = Camera(mapping=SSTCameraMapping(n_pixels=2))
     acquisition = EventAcquisition(camera=camera)
     return acquisition
 
@@ -33,7 +33,9 @@ def test_get_continuous_readout_with_noise():
     pulse = GaussianPulse()
     noise = GaussianNoise(stddev=pulse.peak_height, seed=1)
     camera = Camera(
-        reference_pulse=pulse, electronic_noise=noise, pixel=PixelMapping(n_pixels=1)
+        reference_pulse=pulse,
+        electronic_noise=noise,
+        mapping=SSTCameraMapping(n_pixels=1)
     )
     acquisition = EventAcquisition(camera=camera, seed=1)
     photoelectrons = Photoelectrons(
@@ -56,7 +58,7 @@ def test_sum_superpixels():
 
 
 def test_add_coincidence_window(acquisition):
-    n_pixels = acquisition.camera.pixel.n_pixels
+    n_pixels = acquisition.camera.mapping.n_pixels
     time_axis = acquisition.camera.continuous_readout_time_axis
     n_samples = time_axis.size
     division = acquisition.camera.continuous_readout_sample_division
@@ -82,8 +84,8 @@ def test_update_trigger_threshold():
 
 
 def test_get_digital_trigger_readout(acquisition):
-    n_pixels = acquisition.camera.pixel.n_pixels
-    n_superpixels = acquisition.camera.superpixel.n_superpixels
+    n_pixels = acquisition.camera.mapping.n_pixels
+    n_superpixels = acquisition.camera.mapping.n_superpixels
     time_axis = acquisition.camera.continuous_readout_time_axis
     n_samples = time_axis.size
     division = acquisition.camera.continuous_readout_sample_division
@@ -117,7 +119,7 @@ def test_get_n_superpixel_triggers(acquisition):
 def test_get_backplane_trigger():
     camera = Camera()
     acquisition = EventAcquisition(camera=camera)
-    n_superpixels = camera.superpixel.n_superpixels
+    n_superpixels = camera.mapping.n_superpixels
     n_samples = camera.continuous_readout_time_axis.size
     csample = camera.get_continuous_readout_sample_from_time
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
@@ -149,9 +151,9 @@ def test_get_backplane_trigger():
     assert np.array_equal(trigger_pair, np.array([[0, 1], [2, 3]]))
 
     # Single pixel
-    camera = Camera(pixel=PixelMapping(n_pixels=1))
+    camera = Camera(mapping=SSTCameraMapping(n_pixels=1))
     acquisition = EventAcquisition(camera=camera)
-    n_superpixels = camera.superpixel.n_superpixels
+    n_superpixels = camera.mapping.n_superpixels
     n_samples = camera.continuous_readout_time_axis.size
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
     trigger_readout[0, 10:20] = True
@@ -164,7 +166,7 @@ def test_get_backplane_trigger():
 def test_get_sampled_waveform():
     camera = Camera()
     acquisition = EventAcquisition(camera=camera)
-    n_pixels = camera.pixel.n_pixels
+    n_pixels = camera.mapping.n_pixels
     time_axis = camera.continuous_readout_time_axis
     n_continuous_samples = time_axis.size
     n_samples = camera.n_waveform_samples
@@ -203,9 +205,9 @@ def test_get_sampled_waveform():
         acquisition.get_sampled_waveform(continuous_readout, 900)
 
     # Single Pixel
-    camera = Camera(pixel=PixelMapping(n_pixels=1))
+    camera = Camera(mapping=SSTCameraMapping(n_pixels=1))
     acquisition = EventAcquisition(camera=camera)
-    n_pixels = camera.pixel.n_pixels
+    n_pixels = camera.mapping.n_pixels
     time_axis = camera.continuous_readout_time_axis
     n_continuous_samples = time_axis.size
     n_samples = camera.waveform_duration * camera.waveform_sample_width
@@ -225,11 +227,10 @@ def test_get_sampled_waveform():
 
 def test_get_sampled_waveform_sample_width():
     camera = Camera(
-        pixel=PixelMapping(n_pixels=1),
+        mapping=SSTCameraMapping(n_pixels=1),
     )
     pe = Photoelectrons(pixel=np.array([0]), time=np.array([40]), charge=np.array([1]))
     acquisition = EventAcquisition(camera=camera, seed=1)
     readout = acquisition.get_continuous_readout(pe)
     waveform = acquisition.get_sampled_waveform(readout)
     print(waveform.max())
-    # raise ValueError

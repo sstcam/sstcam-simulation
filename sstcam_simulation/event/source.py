@@ -46,7 +46,7 @@ class PhotoelectronSource:
 
         # Number of NSB photoelectrons per pixel in this event
         length = self.camera.continuous_readout_duration
-        n_pixels = self.camera.pixel.n_pixels
+        n_pixels = self.camera.mapping.n_pixels
         avg_photons_per_waveform = rate * 1e6 * length * 1e-9
         n_nsb_per_pixel = rng.poisson(avg_photons_per_waveform, n_pixels)
 
@@ -86,7 +86,7 @@ class PhotoelectronSource:
         rng = np.random.default_rng(seed=self.seed)
 
         # Poisson fluctuation of photoelectrons
-        n_pixels = self.camera.pixel.n_pixels
+        n_pixels = self.camera.mapping.n_pixels
         n_pe_per_pixel = rng.poisson(illumination, n_pixels)
 
         # Pixel containing each photoelectron
@@ -147,8 +147,8 @@ class PhotoelectronSource:
         rng = np.random.default_rng(seed=self.seed)
 
         image_pe_pdf, image_time = get_cherenkov_shower_image(
-            self.camera.pixel.x,
-            self.camera.pixel.y,
+            self.camera.mapping.pixel.x,
+            self.camera.mapping.pixel.y,
             centroid_x,
             centroid_y,
             length,
@@ -162,7 +162,7 @@ class PhotoelectronSource:
         n_pe_per_pixel = rng.poisson(image_pe_pdf * intensity)
 
         # Pixel containing each photoelectron
-        n_pixels = self.camera.pixel.n_pixels
+        n_pixels = self.camera.mapping.n_pixels
         pixel = np.repeat(np.arange(n_pixels), n_pe_per_pixel)
 
         # Time of arrival for each photoelectron
@@ -191,8 +191,10 @@ class PhotoelectronSource:
         """
         rng = np.random.default_rng(seed=self.seed)
 
-        centroid_x = rng.uniform(self.camera.pixel.x.min(), self.camera.pixel.x.max())
-        centroid_y = rng.uniform(self.camera.pixel.y.min(), self.camera.pixel.y.max())
+        xpix = self.camera.mapping.pixel.x
+        ypix = self.camera.mapping.pixel.y
+        centroid_x = rng.uniform(xpix.min(), xpix.max())
+        centroid_y = rng.uniform(ypix.min(), ypix.max())
         width = rng.uniform(0, 0.03)
         length = rng.uniform(width, 0.1)
         psi = rng.uniform(0, 360)

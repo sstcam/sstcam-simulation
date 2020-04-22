@@ -1,10 +1,10 @@
-from .mapping import PixelMapping, SuperpixelMapping
+from .mapping import SSTCameraMapping
 from .pulse import ReferencePulse, GaussianPulse
 from .spe import SPESpectrum, SiPMGentileSPE
 from .noise import ElectronicNoise, PerfectElectronics
 from .constants import WAVEFORM_SAMPLE_WIDTH, \
     CONTINUOUS_READOUT_SAMPLE_DIVISION, CONTINUOUS_READOUT_SAMPLE_WIDTH
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
 
 __all__ = [
@@ -23,14 +23,13 @@ class Camera:
     trigger_threshold: float = 2  # Unit: photoelectron
     coincidence_window: float = 8  # Unit: nanosecond
     lookback_time: float = 20  # Unit: nanosecond
-    pixel: PixelMapping = PixelMapping()
-    superpixel: SuperpixelMapping = field(init=False)
+    mapping: SSTCameraMapping = SSTCameraMapping()
     reference_pulse: ReferencePulse = GaussianPulse()
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
     electronic_noise: ElectronicNoise = PerfectElectronics()
 
-    def __post_init__(self):
-        super().__setattr__('superpixel', SuperpixelMapping(self.pixel))
+    # def __post_init__(self):
+    #     super().__setattr__('mapping', SSTCameraMapping(self.n_pixels))
 
     @property
     def waveform_sample_width(self):

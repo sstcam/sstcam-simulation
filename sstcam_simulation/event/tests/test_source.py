@@ -1,4 +1,4 @@
-from sstcam_simulation.camera import Camera, PixelMapping
+from sstcam_simulation.camera import Camera, SSTCameraMapping
 from sstcam_simulation.event import PhotoelectronSource
 import numpy as np
 
@@ -9,8 +9,8 @@ def test_photoelectron_source():
 
 
 def test_get_nsb():
-    pixel_mapping = PixelMapping(n_pixels=2)
-    camera = Camera(pixel=pixel_mapping)
+    mapping = SSTCameraMapping(n_pixels=2)
+    camera = Camera(mapping=mapping)
     simulator = PhotoelectronSource(camera, seed=1)
     nsb = simulator.get_nsb(rate=1000)
     assert (nsb.pixel.size == nsb.time.size) & (nsb.pixel.size == nsb.charge.size)
@@ -21,10 +21,12 @@ def test_get_nsb():
 
 
 def test_get_uniform_illumination():
-    pixel_mapping = PixelMapping(n_pixels=2)
-    camera = Camera(pixel=pixel_mapping)
+    mapping = SSTCameraMapping(n_pixels=2)
+    camera = Camera(mapping=mapping)
     simulator = PhotoelectronSource(camera, seed=1)
-    pe = simulator.get_uniform_illumination(time=40, illumination=100, laser_pulse_width=2)
+    pe = simulator.get_uniform_illumination(
+        time=40, illumination=100, laser_pulse_width=2
+    )
     assert (pe.pixel.size == pe.time.size) & (pe.pixel.size == pe.charge.size)
     assert (pe.pixel == 0).sum() == 100
     assert (pe.pixel == 1).sum() == 94
@@ -94,12 +96,13 @@ def test_seed():
     assert sim_5 != sim_6
 
     # get_uniform_illumination
-    sim_1 = simulator_1.get_uniform_illumination(time=40, illumination=50, laser_pulse_width=2)
-    sim_2 = simulator_2.get_uniform_illumination(time=40, illumination=50, laser_pulse_width=2)
-    sim_3 = simulator_3.get_uniform_illumination(time=40, illumination=50, laser_pulse_width=2)
-    sim_4 = simulator_4.get_uniform_illumination(time=40, illumination=50, laser_pulse_width=2)
-    sim_5 = simulator_5.get_uniform_illumination(time=40, illumination=50, laser_pulse_width=2)
-    sim_6 = simulator_6.get_uniform_illumination(time=40, illumination=50, laser_pulse_width=2)
+    kwargs = dict(time=40, illumination=50, laser_pulse_width=2)
+    sim_1 = simulator_1.get_uniform_illumination(**kwargs)
+    sim_2 = simulator_2.get_uniform_illumination(**kwargs)
+    sim_3 = simulator_3.get_uniform_illumination(**kwargs)
+    sim_4 = simulator_4.get_uniform_illumination(**kwargs)
+    sim_5 = simulator_5.get_uniform_illumination(**kwargs)
+    sim_6 = simulator_6.get_uniform_illumination(**kwargs)
     assert sim_1 != sim_2
     assert sim_2 != sim_3  # Generator has been progressed
     assert sim_3 != sim_4

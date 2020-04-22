@@ -6,8 +6,8 @@ import numpy as np
 def test_cherenkov():
     camera = Camera()
     pdf, time = get_cherenkov_shower_image(
-        xpix=camera.pixel.x,
-        ypix=camera.pixel.y,
+        xpix=camera.mapping.pixel.x,
+        ypix=camera.mapping.pixel.y,
         centroid_x=0,
         centroid_y=0,
         length=0.01,
@@ -17,11 +17,11 @@ def test_cherenkov():
         time_intercept=20,
     )
     np.testing.assert_allclose(pdf.sum(), 1)
-    np.testing.assert_allclose(np.polyfit(camera.pixel.x, time, 1), [1.0, 20.0])
+    np.testing.assert_allclose(np.polyfit(camera.mapping.pixel.x, time, 1), [1.0, 20.0])
 
     pdf, time = get_cherenkov_shower_image(
-        xpix=camera.pixel.x,
-        ypix=camera.pixel.y,
+        xpix=camera.mapping.pixel.x,
+        ypix=camera.mapping.pixel.y,
         centroid_x=0.1,
         centroid_y=0,
         length=0.1,
@@ -31,11 +31,11 @@ def test_cherenkov():
         time_intercept=20,
     )
     np.testing.assert_allclose(pdf.sum(), 1)
-    np.testing.assert_allclose(np.polyfit(camera.pixel.x, time, 1), [1.0, 19.9])
+    np.testing.assert_allclose(np.polyfit(camera.mapping.pixel.x, time, 1), [1.0, 19.9])
 
     pdf, time = get_cherenkov_shower_image(
-        xpix=camera.pixel.x,
-        ypix=camera.pixel.y,
+        xpix=camera.mapping.pixel.x,
+        ypix=camera.mapping.pixel.y,
         centroid_x=0,
         centroid_y=0,
         length=0.01,
@@ -45,4 +45,4 @@ def test_cherenkov():
         time_intercept=20,
     )
     np.testing.assert_allclose(pdf.sum(), 1)
-    np.testing.assert_allclose(np.polyfit(camera.pixel.y, time, 1), [1.0, 20.0])
+    np.testing.assert_allclose(np.polyfit(camera.mapping.pixel.y, time, 1), [1.0, 20.0])

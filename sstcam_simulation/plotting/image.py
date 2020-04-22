@@ -1,16 +1,16 @@
 from CHECLabPy.plotting.camera import CameraImage as CLPCameraImage
-from ..camera import PixelMapping, SuperpixelMapping
+from ..camera.mapping import CameraCoordinates
 
 
 class CameraImage(CLPCameraImage):
     @classmethod
-    def from_mapping(cls, mapping, **kwargs):
+    def from_coordinates(cls, coordinates, **kwargs):
         """
-        Generate the class using a sstcam-simulation mapping object
+        Generate the class using a sstcam-simulation CameraCoordinates object
 
         Parameters
         ----------
-        mapping : PixelMapping or SuperpixelMapping
+        coordinates : CameraCoordinates
         kwargs
             Arguments passed to `CHECLabPy.plotting.setup.Plotter`
 
@@ -18,4 +18,4 @@ class CameraImage(CLPCameraImage):
         -------
         CameraImage
         """
-        return cls(mapping.x, mapping.y, mapping.size, **kwargs)
+        return cls(coordinates.x, coordinates.y, coordinates.size, **kwargs)

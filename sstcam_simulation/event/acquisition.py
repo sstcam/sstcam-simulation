@@ -7,7 +7,7 @@ from numba import guvectorize, float64, boolean
 __all__ = ["sum_superpixels", "add_coincidence_window", "EventAcquisition"]
 
 
-def sum_superpixels(continuous_readout, superpixel, n_superpixels):
+def sum_superpixels(continuous_readout, pixel_to_superpixel, n_superpixels):
     """
     Sum the readouts from pixels of the same superpixel
 
@@ -16,7 +16,7 @@ def sum_superpixels(continuous_readout, superpixel, n_superpixels):
     continuous_readout : ndarray
         Readout from each pixel
         Shape: (n_pixels, n_continuous_readout_samples)
-    superpixel : ndarray
+    pixel_to_superpixel : ndarray
         Superpixel index for each pixel in the continuous_readout
     n_superpixels : int
         Number of superpixels in the camera
@@ -29,7 +29,7 @@ def sum_superpixels(continuous_readout, superpixel, n_superpixels):
     """
     n_continuous_readout_samples = continuous_readout.shape[1]
     superpixel_sum = np.zeros((n_superpixels, n_continuous_readout_samples))
-    np.add.at(superpixel_sum, superpixel, continuous_readout)
+    np.add.at(superpixel_sum, pixel_to_superpixel, continuous_readout)
     return superpixel_sum
 
 
@@ -116,7 +116,7 @@ class EventAcquisition:
         pixel = photoelectrons.pixel
         charge = photoelectrons.charge
         n_samples = self.camera.continuous_readout_time_axis.size
-        continuous_readout = np.zeros((self.camera.pixel.n_pixels, n_samples))
+        continuous_readout = np.zeros((self.camera.mapping.n_pixels, n_samples))
         np.add.at(continuous_readout, (pixel, sample), charge)
 
         # Convolve with the reference pulse shape
@@ -151,9 +151,11 @@ class EventAcquisition:
         """
 
         # Sum superpixel readouts
-        superpixel = self.camera.pixel.superpixel
-        n_superpixels = self.camera.superpixel.n_superpixels
-        superpixel_sum = sum_superpixels(continuous_readout, superpixel, n_superpixels)
+        pixel_to_superpixel = self.camera.mapping.pixel_to_superpixel
+        n_superpixels = self.camera.mapping.n_superpixels
+        superpixel_sum = sum_superpixels(
+            continuous_readout, pixel_to_superpixel, n_superpixels
+        )
 
         # Discriminate superpixel readout with threshold
         # (First convert threshold to sample units, i.e. p.e./ns)
@@ -212,7 +214,7 @@ class EventAcquisition:
         sampled = digital_trigger_line[:, ::division]
 
         # Find coincident high trigger lines between neighbouring superpixels
-        neighbours = self.camera.superpixel.neighbours
+        neighbours = self.camera.mapping.superpixel.neighbours
         neighbour_coincidence = sampled[neighbours[:, 0]] & sampled[neighbours[:, 1]]
 
         # Extract the rising edge time for the coincident superpixels
