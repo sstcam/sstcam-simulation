@@ -28,9 +28,6 @@ class Camera:
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
     electronic_noise: ElectronicNoise = PerfectElectronics()
 
-    # def __post_init__(self):
-    #     super().__setattr__('mapping', SSTCameraMapping(self.n_pixels))
-
     @property
     def waveform_sample_width(self):
         """Read-only. Unit: nanosecond"""
