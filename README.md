@@ -79,6 +79,6 @@ clicking the Binder badge above.
 
 A schematic of the package, the simulation chain, and how its classes map to the components of the SST camera is shown below:
 
-![image](https://user-images.githubusercontent.com/17825673/79463069-a7ad7080-7ff8-11ea-8772-2496a42d2259.png)
+![image](https://user-images.githubusercontent.com/17825673/80024650-b22ba680-84df-11ea-8d95-e87bd1a99754.png)
 
 
