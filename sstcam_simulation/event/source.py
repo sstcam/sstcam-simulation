@@ -55,8 +55,8 @@ class PhotoelectronSource:
 
         # Uniformly distribute NSB photoelectrons in time across waveform
         n_photoelectrons = nsb_pixel.size
-        time_axis = self.camera.continuous_readout_time_axis
-        nsb_time = rng.choice(time_axis, size=n_photoelectrons)
+        duration = self.camera.continuous_readout_duration
+        nsb_time = rng.uniform(0, duration, size=n_photoelectrons)
 
         # Get the charge reported by the photosensor (Inverse Transform Sampling)
         spectrum = self.camera.photoelectron_spectrum
