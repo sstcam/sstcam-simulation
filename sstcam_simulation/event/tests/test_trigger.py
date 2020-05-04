@@ -1,5 +1,5 @@
 from sstcam_simulation.event.trigger import (
-    sum_superpixels, add_coincidence_window, Trigger, NNSuperpixelAboveThreshold
+    sum_superpixels, extend_digital_trigger, Trigger, NNSuperpixelAboveThreshold
 )
 from sstcam_simulation.camera import Camera, SSTCameraMapping
 import numpy as np
@@ -35,22 +35,22 @@ def test_sum_superpixels():
     assert np.array_equal(superpixel_sum[1], np.full(10, 8))
 
 
-def test_add_coincidence_window():
+def test_extend_digital_trigger():
     camera = Camera(mapping=SSTCameraMapping(n_pixels=2))
     n_pixels = camera.mapping.n_pixels
     time_axis = camera.continuous_readout_time_axis
     n_samples = time_axis.size
     division = camera.continuous_readout_sample_division
-    window = camera.coincidence_window * division
+    length = camera.digital_trigger_length * division
     above_threshold = np.zeros((n_pixels, n_samples), dtype=np.bool)
     above_threshold[0, 100:101] = True
     above_threshold[1, 200:500] = True
     above_threshold[1, 510:520] = True
     trigger_readout_expected = np.zeros((n_pixels, n_samples), dtype=np.bool)
-    trigger_readout_expected[0, 100:101+window] = True
-    trigger_readout_expected[1, 200:500+window] = True
-    trigger_readout_expected[1, 510:520+window] = True
-    trigger_readout = add_coincidence_window(above_threshold, window)
+    trigger_readout_expected[0, 100:101+length] = True
+    trigger_readout_expected[1, 200:500+length] = True
+    trigger_readout_expected[1, 510:520+length] = True
+    trigger_readout = extend_digital_trigger(above_threshold, length)
     assert np.array_equal(trigger_readout, trigger_readout_expected)
 
 
@@ -70,25 +70,25 @@ def test_get_digital_trigger_readout():
     time_axis = trigger.camera.continuous_readout_time_axis
     n_samples = time_axis.size
     division = trigger.camera.continuous_readout_sample_division
-    window = trigger.camera.coincidence_window * division
+    length = trigger.camera.digital_trigger_length * division
     continuous_readout = np.zeros((n_pixels, n_samples))
     continuous_readout[0, 100:101] = 100
     continuous_readout[0, 200:500] = 0.1
     continuous_readout[1, 200:500] = 100
     continuous_readout[1, 510:520] = 100
     trigger_readout_expected = np.zeros((n_superpixels, n_samples), dtype=np.bool)
-    trigger_readout_expected[0, 100:101] = True
-    trigger_readout_expected[0, 200:500] = True
-    trigger_readout_expected[0, 510:520] = True
+    trigger_readout_expected[0, 100] = True
+    trigger_readout_expected[0, 200] = True
+    trigger_readout_expected[0, 510] = True
     trigger_readout = trigger.get_superpixel_digital_trigger_line(continuous_readout)
     assert np.array_equal(trigger_readout, trigger_readout_expected)
 
     # Add window
     trigger_readout_expected = np.zeros((n_superpixels, n_samples), dtype=np.bool)
-    trigger_readout_expected[0, 100:101+window] = True
-    trigger_readout_expected[0, 200:500+window] = True
-    trigger_readout_expected[0, 510:520+window] = True
-    trigger_readout = trigger.extend_by_coincidence_window(trigger_readout)
+    trigger_readout_expected[0, 100:101+length] = True
+    trigger_readout_expected[0, 200:201+length] = True
+    trigger_readout_expected[0, 510:511+length] = True
+    trigger_readout = trigger.extend_by_digital_trigger_length(trigger_readout)
     assert np.array_equal(trigger_readout, trigger_readout_expected)
 
 

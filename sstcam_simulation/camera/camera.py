@@ -21,7 +21,7 @@ class Camera:
     continuous_readout_duration: int = 1000  # Unit: nanosecond
     n_waveform_samples: int = 128
     trigger_threshold: float = 2  # Unit: photoelectron
-    coincidence_window: float = 8  # Unit: nanosecond
+    digital_trigger_length: float = 8  # Unit: nanosecond
     lookback_time: float = 20  # Unit: nanosecond
     mapping: SSTCameraMapping = SSTCameraMapping()
     reference_pulse: ReferencePulse = GaussianPulse()
@@ -68,6 +68,3 @@ class Camera:
 
     def update_trigger_threshold(self, trigger_threshold):
         super().__setattr__('trigger_threshold', trigger_threshold)
-
-    def update_coincidence_window(self, coincidence_window):
-        super().__setattr__('coincidence_window', coincidence_window)

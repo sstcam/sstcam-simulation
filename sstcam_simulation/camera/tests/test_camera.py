@@ -44,8 +44,3 @@ def test_update_trigger_threshold():
     assert camera.trigger_threshold == 6
 
 
-def test_update_coincidence_window():
-    camera = Camera(coincidence_window=5)
-    assert camera.coincidence_window == 5
-    camera.update_coincidence_window(6)
-    assert camera.coincidence_window == 6

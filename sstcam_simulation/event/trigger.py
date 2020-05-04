@@ -4,7 +4,7 @@ import numpy as np
 
 __all__ = [
     "sum_superpixels",
-    "add_coincidence_window",
+    "extend_digital_trigger",
     "Trigger",
     "NNSuperpixelAboveThreshold",
 ]
@@ -37,31 +37,31 @@ def sum_superpixels(continuous_readout, pixel_to_superpixel, n_superpixels):
 
 
 @guvectorize([(boolean[:], float64, boolean[:])], "(n),()->(n)", fastmath=True)
-def add_coincidence_window(above_threshold, coincidence_samples, digital_signal):
+def extend_digital_trigger(array, length, digital_signal):
     """
-    Pad the digital trigger signal with True after above_threshold to emulate
-    the coincidence window
+    Pad the digital trigger signals with True
 
     Parameters
     ----------
-    above_threshold : ndarray
-        Boolean array of samples that are above threshold
+    array : ndarray
+        Boolean array of samples, with True indicating the start of digital
+        trigger signals that are to be extended
         Shape: (n_superpixels, n_continuous_readout_samples)
-    coincidence_samples : int
-        Number of samples that correspond to the coincidence window length
+    length : int
+        Number of samples for the digital signal to be extended by
     digital_signal : ndarray
-        Inplace return array, containing the trigger digital signal
+        Inplace return array, containing the extended trigger digital signal
         Shape: (n_superpixels, n_continuous_readout_samples)
     """
-    above_counter = 0
-    for isample in range(above_threshold.size):
-        if above_threshold[isample]:
+    counter = 0
+    for isample in range(array.size):
+        if array[isample]:
             digital_signal[isample] = True
-            above_counter = coincidence_samples
+            counter = length
         else:
-            if above_counter > 0:
+            if counter > 0:
                 digital_signal[isample] = True
-                above_counter -= 1
+                counter -= 1
             else:
                 digital_signal[isample] = False
 
@@ -103,13 +103,13 @@ class NNSuperpixelAboveThreshold(Trigger):
 
     def __call__(self, continuous_readout):
         line = self.get_superpixel_digital_trigger_line(continuous_readout)
-        extended = self.extend_by_coincidence_window(line)
+        extended = self.extend_by_digital_trigger_length(line)
         return self.get_backplane_trigger(extended)
 
     def get_superpixel_digital_trigger_line(self, continuous_readout):
         """
         Obtain the boolean digital trigger line for each superpixel, based on
-        if the continuous readout (summed across each superpixel) is above the
+        if the continuous readout (summed across each superpixel) crosses the
         trigger threshold
 
         Parameters
@@ -131,15 +131,19 @@ class NNSuperpixelAboveThreshold(Trigger):
             continuous_readout, pixel_to_superpixel, n_superpixels
         )
 
-        # Discriminate superpixel readout with threshold
-        # (First convert threshold to sample units, i.e. p.e./ns)
+        # Convert threshold to sample units, i.e. p.e./ns
         sample_unit_per_photoelectron = self.camera.reference_pulse.peak_height
         threshold = self.camera.trigger_threshold * sample_unit_per_photoelectron
+
+        # Discriminate superpixel readout with threshold
         above_threshold = superpixel_sum >= threshold
 
-        return above_threshold
+        # Only consider times when threshold is crossed
+        crossings = np.diff(above_threshold.astype(np.int), prepend=0) == 1
 
-    def extend_by_coincidence_window(self, digital_trigger_line):
+        return crossings
+
+    def extend_by_digital_trigger_length(self, digital_trigger_line):
         """
         Extend the superpixel digital trigger line (boolean array) to
         account for the coincidence window
@@ -147,18 +151,19 @@ class NNSuperpixelAboveThreshold(Trigger):
         Parameters
         ----------
         digital_trigger_line : ndarray
-            Boolean array indicating where each superpixel line is "high" (True)
+            Boolean array of samples, with True indicating the start of digital
+            trigger signals that are to be extended
             Shape: (n_superpixels, n_continuous_readout_samples)
 
         Returns
         -------
         digital_trigger_line : ndarray
-            Digital trigger line extended by the coincidence window
+            Extended digital trigger line
             Shape: (n_superpixels, n_continuous_readout_samples)
         """
         division = self.camera.continuous_readout_sample_division
-        coincidence_samples = self.camera.coincidence_window * division
-        return add_coincidence_window(digital_trigger_line, coincidence_samples)
+        length = self.camera.digital_trigger_length * division
+        return extend_digital_trigger(digital_trigger_line, length)
 
     def get_backplane_trigger(self, digital_trigger_line, return_pairs=False):
         """
