@@ -139,7 +139,7 @@ class NNSuperpixelAboveThreshold(Trigger):
         above_threshold = superpixel_sum >= threshold
 
         # Only consider times when threshold is crossed
-        crossings = np.diff(above_threshold.astype(np.int), prepend=0) == 1
+        crossings = np.diff(above_threshold.astype(np.int)) == 1
 
         return crossings
 
@@ -231,4 +231,4 @@ class NNSuperpixelAboveThreshold(Trigger):
         ndarray
             Number of triggers in the digital signal readout per superpixel
         """
-        return np.sum(np.diff(digital_trigger_line.astype(np.int), prepend=0) == 1, axis=1)
+        return np.sum(np.diff(digital_trigger_line.astype(np.int)) == 1, axis=1)
