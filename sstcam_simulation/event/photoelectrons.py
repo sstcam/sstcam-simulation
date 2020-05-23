@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 
 __all__ = [
@@ -28,6 +28,7 @@ class Photoelectrons:
     pixel: np.ndarray
     time: np.ndarray
     charge: np.ndarray
+    metadata: dict = field(default_factory={})
 
     def __len__(self):
         return self.pixel.size
