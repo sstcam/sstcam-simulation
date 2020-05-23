@@ -12,6 +12,8 @@ class ElectronicNoise(metaclass=ABCMeta):
     """
     Base for classes which define an electronic noise spectrum, and how it is
     applied to the waveform
+
+    Can be used for any of the noise components
     """
 
     @abstractmethod

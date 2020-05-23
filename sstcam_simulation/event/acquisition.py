@@ -76,7 +76,7 @@ class EventAcquisition:
         convolved = convolve1d(continuous_readout, pulse, mode="constant", origin=origin)
 
         # Add electronic noise
-        noisy = self.camera.electronic_noise.add_to_readout(convolved)
+        noisy = self.camera.readout_noise.add_to_readout(convolved)
 
         return noisy
 
@@ -150,5 +150,8 @@ class EventAcquisition:
         waveform = readout_slice.reshape(
             (n_pixels, n_samples, division)
         ).sum(-1) * self.camera.continuous_readout_sample_width
+
+        # Add electronic (digitisation) noise
+        waveform = self.camera.digitisation_noise.add_to_readout(waveform)
 
         return waveform

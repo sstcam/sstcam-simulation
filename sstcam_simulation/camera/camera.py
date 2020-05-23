@@ -26,7 +26,8 @@ class Camera:
     mapping: SSTCameraMapping = SSTCameraMapping()
     reference_pulse: ReferencePulse = GaussianPulse()
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
-    electronic_noise: ElectronicNoise = PerfectElectronics()
+    readout_noise: ElectronicNoise = PerfectElectronics()
+    digitisation_noise: ElectronicNoise = PerfectElectronics()
 
     @property
     def waveform_sample_width(self):
