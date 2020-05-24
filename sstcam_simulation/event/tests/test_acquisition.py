@@ -30,7 +30,7 @@ def test_get_continuous_readout_with_noise():
     noise = GaussianNoise(stddev=pulse.peak_height, seed=1)
     camera = Camera(
         reference_pulse=pulse,
-        electronic_noise=noise,
+        readout_noise=noise,
         mapping=SSTCameraMapping(n_pixels=1)
     )
     acquisition = EventAcquisition(camera=camera, seed=1)
