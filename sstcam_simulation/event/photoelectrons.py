@@ -28,7 +28,7 @@ class Photoelectrons:
     pixel: np.ndarray
     time: np.ndarray
     charge: np.ndarray
-    metadata: dict = field(default_factory={})
+    metadata: dict = field(default_factory=dict)
 
     def __len__(self):
         return self.pixel.size
