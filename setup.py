@@ -16,6 +16,7 @@ setup(
         'astropy',
         'scipy',
         'numpy',
+        'pandas',
         'matplotlib',
         'tqdm',
         'numba',
