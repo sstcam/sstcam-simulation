@@ -139,7 +139,8 @@ class NNSuperpixelAboveThreshold(Trigger):
         above_threshold = superpixel_sum >= threshold
 
         # Only consider times when threshold is crossed
-        crossings = np.diff(above_threshold.astype(np.int)) == 1
+        prepend = 1 if above_threshold.all() else 0
+        crossings = np.diff(above_threshold.astype(np.int), prepend=prepend) == 1
 
         return crossings
 
