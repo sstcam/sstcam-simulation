@@ -4,7 +4,7 @@ PACKAGENAME = "sstcam_simulation"
 DESCRIPTION = "SST camera low-level simulation package"
 AUTHOR = "Jason J Watson"
 AUTHOR_EMAIL = "jason.watson@physics.ox.ac.uk"
-VERSION = "1.0.0"
+VERSION = "2.1.0"
 
 setup(
     name=PACKAGENAME,
