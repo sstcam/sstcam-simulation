@@ -1,5 +1,5 @@
 import numpy as np
-from CHECLabPy.core.io import HDF5Reader
+import tables
 from CHECLabPy.utils.mapping import get_row_column
 from ..camera import Camera
 from .photoelectrons import Photoelectrons
@@ -236,15 +236,14 @@ class PhotoelectronReader:
             and combined with the start_time to define the absolute arrival
             time of each photoelectron
         """
-        self.reader = HDF5Reader(path)
+        self.file = tables.File(path, mode='r')
         self.camera = camera
         self.seed = seed
         self.start_time = start_time
 
         # Obtain conversion between simtelarray and sstcam-simulation camera mapping
-        df_geometry = self.reader.read("geometry")
-        pix_x = df_geometry['pix_x'].values
-        pix_y = df_geometry['pix_y'].values
+        pix_x = self.file.root.Geometry.pixel_x.read()
+        pix_y = self.file.root.Geometry.pixel_y.read()
         row, col = get_row_column(pix_x, pix_y)
         n_rows = row.max() + 1
         n_columns = col.max() + 1
@@ -260,14 +259,18 @@ class PhotoelectronReader:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.reader.__exit__(exc_type, exc_val, exc_tb)
+        self.file.close()
 
     def __iter__(self):
         rng = np.random.default_rng(seed=self.seed)
-        df = self.reader.read("data")
-        for index, row in df.iterrows():
-            pixel = self.pixel_conversion[row['pixel']]
-            time = row['time']
+        data = self.file.root.Data
+        table_iter = data.event.iterrows()
+        pe_time_iter = data.photoelectron_arrival_time.iterrows()
+        pe_pixel_iter = data.photoelectron_arrival_pixel.iterrows()
+        event_iter = zip(table_iter, pe_time_iter, pe_pixel_iter)
+
+        for row, time, pixel in event_iter:
+            pixel = self.pixel_conversion[pixel]
             metadata = dict(
                 energy=row['energy'],
                 alt=row['alt'],
