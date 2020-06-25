@@ -6,6 +6,8 @@ from .constants import WAVEFORM_SAMPLE_WIDTH, \
     CONTINUOUS_READOUT_SAMPLE_DIVISION, CONTINUOUS_READOUT_SAMPLE_WIDTH
 from dataclasses import dataclass
 import numpy as np
+import pickle
+
 
 __all__ = [
     "Camera",
@@ -69,3 +71,30 @@ class Camera:
 
     def update_trigger_threshold(self, trigger_threshold):
         super().__setattr__('trigger_threshold', trigger_threshold)
+
+    def save(self, path):
+        """
+        Save the camera object to disk
+
+        Parameters
+        ----------
+        path : str
+        """
+        with open(path, mode='wb') as file:
+            pickle.dump(self, file)
+
+    @classmethod
+    def load(cls, path):
+        """
+        Load a camera object from disk
+
+        Parameters
+        ----------
+        path : str
+
+        Returns
+        -------
+        Camera
+        """
+        with open(path, mode='rb') as file:
+            return pickle.load(file)

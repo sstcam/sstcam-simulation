@@ -44,3 +44,10 @@ def test_update_trigger_threshold():
     assert camera.trigger_threshold == 6
 
 
+def test_save_load(tmp_path):
+    path = str(tmp_path / 'test.pkl')
+    mapping = SSTCameraMapping(n_pixels=23)
+    camera = Camera(mapping=mapping)
+    camera.save(path)
+    camera_loaded = Camera.load(path)
+    assert camera_loaded.mapping.n_pixels == 23
