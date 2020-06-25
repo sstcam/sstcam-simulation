@@ -143,3 +143,17 @@ class SSTCameraMapping:
         superpixel_rowcol = np.zeros((n_superpixels, 4))
         superpixel_rowcol[superpixel, np.argsort(superpixel) % 4] = rowcol
         return superpixel_rowcol[:, 0] // 2
+
+    def reinitialise(self, n_pixels):
+        """
+        Initialise the mapping from scratch, providing the opportunity to
+        change the number of pixels
+
+        WARNING: can have odd consequences. Avoid using this if possible.
+
+        Parameters
+        ----------
+        n_pixels : int
+            Number of pixels in the simulated camera
+        """
+        self.__init__(n_pixels)

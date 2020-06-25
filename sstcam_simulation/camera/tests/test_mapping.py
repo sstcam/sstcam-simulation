@@ -83,3 +83,12 @@ def test_superpixel_mapping():
     assert np.unique(mapping.superpixel.row).size == 1
     assert np.unique(mapping.superpixel.column).size == 1
     assert mapping.superpixel.neighbours.shape == (0, 2)
+
+
+def test_reinitialise():
+    mapping = SSTCameraMapping(n_pixels=20)
+    assert mapping.n_pixels == 20
+    assert mapping.pixel.i.size == 20
+    mapping.reinitialise(10)
+    assert mapping.n_pixels == 10
+    assert mapping.pixel.i.size == 10
