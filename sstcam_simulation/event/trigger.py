@@ -53,6 +53,7 @@ def extend_digital_trigger(array, length, digital_signal):
         Inplace return array, containing the extended trigger digital signal
         Shape: (n_superpixels, n_continuous_readout_samples)
     """
+    # TODO: Only reset counter after reaching end
     counter = 0
     for isample in range(array.size):
         if array[isample]:

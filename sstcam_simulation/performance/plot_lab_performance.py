@@ -8,12 +8,13 @@ from CHECLabPy.utils.resolutions import ChargeResolution
 
 def extract_trigger_efficiency(illumination, n_triggers):
     df = pd.DataFrame(dict(illumination=illumination, n_triggers=n_triggers))
+    df['triggered'] = df['n_triggers'] > 0
     trigger_eff = df.groupby('illumination').agg(['mean', 'std', 'count'])
 
     x = trigger_eff.index
-    mean = trigger_eff['n_triggers']['mean'].values
-    stddev = trigger_eff['n_triggers']['std'].values
-    stderr = stddev / np.sqrt(trigger_eff['n_triggers']['count'].values)
+    mean = trigger_eff['triggered']['mean'].values
+    stddev = trigger_eff['triggered']['std'].values
+    stderr = stddev / np.sqrt(trigger_eff['triggered']['count'].values)
 
     return x, mean, stderr
 
@@ -61,8 +62,8 @@ class TriggerEfficiencyPlot:
         self.ax.set_ylabel("Trigger Efficiency")
         self.ax.axhline(0.5, color='black', ls='-')
 
-    def plot(self, x, y, yerr, teff_50, label=None):
-        label += f" (50% @ {teff_50:.2f} p.e.)"
+    def plot(self, x, y, yerr, teff_50):
+        label = f" (50% @ {teff_50:.2f} p.e.)"
         color = self.ax._get_lines.get_next_color()
         self.ax.errorbar(x, y, yerr=yerr, fmt='.', color=color, label=label)
         self.ax.axvline(teff_50, ls=':', color=color)
@@ -75,17 +76,17 @@ class TriggerEfficiencyPlot:
 
 class ChargeResolutionPlot:
     def __init__(self):
-        self.fig, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots(figsize=(8, 5))
         self.ax.set_xlabel("Number of Photoelectrons")
         self.ax.set_ylabel(r"Fractional Charge Resolution $\frac{{\sigma_Q}}{{Q}}$")
         self.ax.set_xscale('log')
         self.ax.set_yscale('log')
 
-    def plot(self, x, y, label=None):
-        self.ax.plot(x, y, '.', label=label)
+    def plot(self, x, y):
+        self.ax.plot(x, y, '.')
 
     def save(self, path):
-        self.ax.legend(loc='best')
+        # self.ax.legend(loc='best')
         print(f"Saving plot: {path}")
         self.fig.savefig(path)
 
@@ -119,11 +120,11 @@ def main():
     cr_x, cr_y = extract_charge_resolution_mc(measured_charge, true_charge)
 
     teff_plot = TriggerEfficiencyPlot()
-    teff_plot.plot(teff_x, teff_y, teff_yerr, teff_50, label="Test")
+    teff_plot.plot(teff_x, teff_y, teff_yerr, teff_50)
     teff_plot.save(teff_path)
 
     cr_plot = ChargeResolutionPlot()
-    cr_plot.plot(cr_x, cr_y, label="Test")
+    cr_plot.plot(cr_x, cr_y)
     cr_plot.save(cr_path)
 
 
