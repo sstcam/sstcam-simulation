@@ -206,7 +206,7 @@ def main():
     signal_time = 60  # ns
     signal_index = camera.get_waveform_sample_from_time(signal_time)
     extractor = ChargeExtractor(camera, signal_index)
-    illuminations = np.geomspace(100, 1000, 100)
+    illuminations = np.geomspace(0.1, 1000, 100)
 
     # Calculate pedestal
     n_empty = 10000
