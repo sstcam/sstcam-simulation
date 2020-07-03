@@ -81,11 +81,14 @@ def perform_nsb_bias_scan(camera, nsb):
             n_triggers[iev, i] = trigger.get_n_superpixel_triggers(digital_trigger)
 
     n_triggers[:, n_triggers.sum(0) <= 1] = np.nan  # Remove entries with low statistics
-    rate = n_triggers / (camera.continuous_readout_duration * 1e-9)
-    return thresholds, rate.mean(0), rate.std(0)
+    n_triggers_avg = n_triggers.mean(0)
+    n_triggers_err = np.sqrt(n_triggers_avg / n_repeats)
+    rate_avg = n_triggers_avg / (camera.continuous_readout_duration * 1e-9)
+    rate_err = n_triggers_err / (camera.continuous_readout_duration * 1e-9)
+    return thresholds, rate_avg, rate_err
 
 
-def get_threshold_for_rate(thresholds, trigger_rates, requested_rate):
+def get_threshold_for_rate(thresholds, trigger_rates, trigger_rates_err, requested_rate):
     """
     Obtain the trigger threshold that corresponds to a specific superpixel
     trigger rate (from the NSB bias scan)
@@ -104,8 +107,9 @@ def get_threshold_for_rate(thresholds, trigger_rates, requested_rate):
     mask = np.isfinite(trigger_rates)
     thresholds = thresholds[mask][-10:]
     rates = trigger_rates[mask][-10:]
+    err = trigger_rates_err[mask][-10:]
 
-    y_intercept, gradient = polyfit(thresholds, np.log10(rates), 1)
+    y_intercept, gradient = polyfit(thresholds, np.log10(rates), 1, w=1/np.log10(err))
     required_threshold = (np.log10(requested_rate) - y_intercept) / gradient
     return required_threshold, gradient, y_intercept
 
@@ -170,16 +174,16 @@ def main():
     superpixel_rate = calculate_expected_superpixel_rate(camera_rate, coincidence_window)
 
     # Set camera threshold
-    thresholds, rate_mean, rate_std = perform_nsb_bias_scan(camera, nsb_rate)
+    thresholds, rate_avg, rate_err = perform_nsb_bias_scan(camera, nsb_rate)
     required_threshold, gradient, y_intercept = get_threshold_for_rate(
-        thresholds, rate_mean, superpixel_rate
+        thresholds, rate_avg, rate_err, superpixel_rate
     )
     camera.update_trigger_threshold(required_threshold)
 
     # Plot bias scan
     fig, ax = plt.subplots()
     label = f"Scan ({nsb_rate:.2f} MHz NSB)"
-    ax.errorbar(thresholds, rate_mean, yerr=rate_std, label=label, fmt='.')
+    ax.errorbar(thresholds, rate_avg, yerr=rate_err, label=label, fmt='.')
     label = f"Fit (Required threshold = {required_threshold:.2f} p.e.)"
     ax.plot(thresholds, 10**polyval(thresholds, [y_intercept, gradient]), label=label)
     ax.axhline(superpixel_rate, color='black', ls='-')
