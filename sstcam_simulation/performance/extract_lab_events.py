@@ -4,8 +4,9 @@ import numpy as np
 from numpy.polynomial.polynomial import polyfit, polyval
 from matplotlib import pyplot as plt
 from tqdm import trange, tqdm
-from ctapipe.image.extractor import integration_correction, extract_around_peak
 import tables
+from scipy import interpolate
+from scipy.ndimage import correlate1d
 
 
 def calculate_expected_superpixel_rate(camera_rate, coincidence_window):
@@ -115,22 +116,25 @@ def get_threshold_for_rate(thresholds, trigger_rates, trigger_rates_err, request
 
 
 class ChargeExtractor:
-    def __init__(self, camera, peak_index, width, shift):
-        self.correction = integration_correction(
-            camera.reference_pulse.pulse[None, :],
-            camera.continuous_readout_sample_width,
-            camera.waveform_sample_width,
-            width, shift
-        )
+    def __init__(self, camera, peak_index):
         self.peak_index = peak_index
-        self.width = width
-        self.shift = shift
+
+        ref_x = camera.reference_pulse.time
+        ref_y = camera.reference_pulse.pulse
+
+        # Prepare for cc
+        f = interpolate.interp1d(ref_x, ref_y, kind=3)
+        cc_ref_x = np.arange(0, ref_x[-1], 1)
+        cc_ref_y = f(cc_ref_x)
+        y_1pe = cc_ref_y / np.trapz(cc_ref_y)
+        self.origin = cc_ref_y.argmax() - cc_ref_y.size // 2
+        scale = correlate1d(y_1pe, cc_ref_y, mode='constant', origin=self.origin).max()
+        self.cc_ref_y = cc_ref_y / scale
 
     def extract(self, waveforms):
-        charge, _ = extract_around_peak(
-            waveforms, self.peak_index, self.width, self.shift, 1
-        )
-        return charge * self.correction
+        cc = correlate1d(waveforms, self.cc_ref_y, mode='constant', origin=self.origin)
+        charge = cc[:, self.peak_index]
+        return charge
 
 
 FILTERS = tables.Filters(
@@ -201,8 +205,20 @@ def main():
     trigger = acquisition.trigger
     signal_time = 60  # ns
     signal_index = camera.get_waveform_sample_from_time(signal_time)
-    extractor = ChargeExtractor(camera, signal_index, 8, 3)
-    illuminations = np.geomspace(0.1, 1000, 100)
+    extractor = ChargeExtractor(camera, signal_index)
+    illuminations = np.geomspace(100, 1000, 100)
+
+    # Calculate pedestal
+    n_empty = 10000
+    pedestal_array = np.zeros((n_empty, n_pixels))
+    for i in trange(n_empty, desc="Measuring pedestal"):
+        nsb_pe = source.get_nsb(nsb_rate)
+        readout = acquisition.get_continuous_readout(nsb_pe)
+        waveform = acquisition.get_sampled_waveform(readout)
+        charge = extractor.extract(waveform)
+        pedestal_array[i] = charge
+    pedestal = np.median(pedestal_array)
+    print(f"Pedestal = {pedestal:.3f}")
 
     class EventTable(tables.IsDescription):
         illumination = tables.Float64Col()
@@ -227,7 +243,7 @@ def main():
                 n_triggers = trigger.get_n_superpixel_triggers(digital_trigger)
 
                 waveform = acquisition.get_sampled_waveform(readout)
-                charge = extractor.extract(waveform)
+                charge = extractor.extract(waveform) - pedestal
 
                 event = table.row
                 event['illumination'] = illumination
