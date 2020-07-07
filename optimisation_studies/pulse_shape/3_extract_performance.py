@@ -92,7 +92,10 @@ def main():
 
     df_files = obtain_df_files(h5_paths)
     df = obtain_df_performance(df_files)
-    with pd.HDFStore("performance.h5") as store:
+
+    path = "performance.h5"
+    print("Creating file: ", path)
+    with pd.HDFStore(path) as store:
         store['data'] = df
 
 

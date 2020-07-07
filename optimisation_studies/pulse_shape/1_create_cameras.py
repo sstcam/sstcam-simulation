@@ -55,11 +55,11 @@ def main():
 
     x = np.linspace(0, 128, 1000)
 
-    n_sigma0 = 15
-    n_sigma1 = 20
+    n_sigma0 = 25
+    n_sigma1 = 30
     ratio_values = [0.2, 0.4, 0.6, 0.8]
-    sigma0_values = np.linspace(0.5, 20, n_sigma0)
-    sigma1_values = np.linspace(0, 10, n_sigma1)
+    sigma0_values = np.linspace(0.5, 30, n_sigma0)
+    sigma1_values = np.linspace(0, 20, n_sigma1)
 
     pulse_width = np.zeros((n_sigma0, n_sigma1))
     undershoot_width = np.zeros((n_sigma0, n_sigma1))
