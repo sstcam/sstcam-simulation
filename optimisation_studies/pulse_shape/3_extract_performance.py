@@ -34,6 +34,8 @@ def obtain_df_files(h5_paths):
             undershoot_width = 0
 
         area_pos, area_neg = extract_area(x, y)
+        height_pos = y.max()
+        height_min = (-y).max()
 
         df_files.append(dict(
             h5_path=h5_path,
@@ -43,7 +45,8 @@ def obtain_df_files(h5_paths):
             sigma1=sigma1,
             pulse_width=pulse_width,
             undershoot_width=undershoot_width,
-            measured_ratio=area_neg/area_pos,
+            measured_area_ratio=area_neg/area_pos,
+            measured_height_ratio=height_min/height_pos,
         ))
     return pd.DataFrame(df_files).sort_values(['sigma0', 'sigma1'])
 
@@ -76,6 +79,8 @@ def obtain_df_performance(df_files):
             sigma1=row['sigma1'],
             pulse_width=row['pulse_width'],
             undershoot_width=row['undershoot_width'],
+            measured_area_ratio=row['measured_area_ratio'],
+            measured_height_ratio=row['measured_height_ratio'],
             teff_50=teff_50,
             cr_2pe=cr_2pe,
             cr_100pe=cr_100pe,
