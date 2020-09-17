@@ -30,6 +30,10 @@ class ReferencePulse(metaclass=ABCMeta):
         self.origin = self.pulse.argmax() - self.pulse.size // 2
         self.peak_height = self.pulse.max()  # Units: 1 / ns
 
+    @property
+    def sample_width(self):
+        return self.time[1] - self.time[0]
+
     @abstractmethod
     def _function(self, time):
         """
