@@ -1,8 +1,6 @@
 from sstcam_simulation.camera import Camera, SSTCameraMapping
-from sstcam_simulation.event import PhotoelectronSource, PhotoelectronReader
-from sstcam_simulation.data import get_data
+from sstcam_simulation.event import PhotoelectronSource
 import numpy as np
-import warnings
 
 
 def test_photoelectron_source():
@@ -133,18 +131,3 @@ def test_seed():
     assert sim_3 != sim_4
     assert sim_4 == sim_5
     assert sim_5 != sim_6
-
-
-def test_photoelectron_reader():
-    camera = Camera()
-    path = get_data("testing/photoelectron_test.h5")
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        with PhotoelectronReader(path, camera=camera) as reader:
-            for pe in reader:
-                assert len(pe) > 0
-
-        with PhotoelectronReader(path, camera=camera, start_time=20) as reader:
-            for pe in reader:
-                np.testing.assert_allclose(pe.time.min(), 20, rtol=1e-4)

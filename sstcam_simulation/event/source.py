@@ -1,11 +1,9 @@
 import numpy as np
-import tables
-from CHECLabPy.utils.mapping import get_row_column
 from ..camera import Camera
 from .photoelectrons import Photoelectrons
 from .cherenkov import get_cherenkov_shower_image
 
-__all__ = ["PhotoelectronSource", "PhotoelectronReader"]
+__all__ = ["PhotoelectronSource"]
 
 
 class PhotoelectronSource:
@@ -214,80 +212,3 @@ class PhotoelectronSource:
             intensity=intensity,
             cherenkov_pulse_width=cherenkov_pulse_width,
         )
-
-
-class PhotoelectronReader:
-    def __init__(self, path, camera, seed=None, start_time=None):
-        """
-        Reader for photoelectrons stored to a HDF5 file
-
-        Parameters
-        ----------
-        path : str
-            Path to the HDF5 file
-        camera : Camera
-            Description of the camera
-        seed : int or tuple
-            Seed for the numpy random number generator.
-            Ensures the reproducibility of an event if you know its seed
-        start_time : float
-            If set, the absolute times in the file are mostly disregarded.
-            Instead, the relative time between photoelectrons is extracted,
-            and combined with the start_time to define the absolute arrival
-            time of each photoelectron
-        """
-        self.file = tables.File(path, mode='r')
-        self.camera = camera
-        self.seed = seed
-        self.start_time = start_time
-
-        # Obtain conversion between simtelarray and sstcam-simulation camera mapping
-        pix_x = self.file.root.Geometry.pixel_x.read()
-        pix_y = self.file.root.Geometry.pixel_y.read()
-        row, col = get_row_column(pix_x, pix_y)
-        n_rows = row.max() + 1
-        n_columns = col.max() + 1
-        n_pixels = pix_x.size
-        camera_2d = np.zeros((n_rows, n_columns), dtype=np.int)
-        camera_2d[self.camera.mapping.pixel.row, self.camera.mapping.pixel.column] = np.arange(n_pixels, dtype=np.int)
-        self.pixel_conversion = camera_2d[
-            row,
-            col
-        ]
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.file.close()
-
-    def __iter__(self):
-        rng = np.random.default_rng(seed=self.seed)
-        data = self.file.root.Data
-        table_iter = data.event.iterrows()
-        pe_time_iter = data.photoelectron_arrival_time.iterrows()
-        pe_pixel_iter = data.photoelectron_arrival_pixel.iterrows()
-        event_iter = zip(table_iter, pe_time_iter, pe_pixel_iter)
-
-        for row, time, pixel in event_iter:
-            pixel = self.pixel_conversion[pixel]
-            metadata = dict(
-                energy=row['energy'],
-                alt=row['alt'],
-                core_x=row['core_x'],
-                core_y=row['core_y'],
-                h_first_int=row['h_first_int'],
-                x_max=row['x_max'],
-                shower_primary_id=row['shower_primary_id'],
-            )
-
-            # Set time relative to start_time
-            if self.start_time is not None:
-                time = self.start_time + time - time.min()
-
-            # Get the charge reported by the photosensor (Inverse Transform Sampling)
-            spectrum = self.camera.photoelectron_spectrum
-            n_photoelectrons = pixel.size
-            charge = rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
-
-            yield Photoelectrons(pixel=pixel, time=time, charge=charge, metadata=metadata)
