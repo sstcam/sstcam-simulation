@@ -69,3 +69,7 @@ class Photoelectrons:
         np.add.at(sum_, self.pixel, self.time)
         np.add.at(n, self.pixel, 1)
         return np.divide(sum_, n, out=np.full_like(sum_, np.nan), where=n != 0)
+
+    @classmethod
+    def empty(cls):
+        return cls(np.empty(0, dtype=np.int), np.empty(0), np.empty(0))
