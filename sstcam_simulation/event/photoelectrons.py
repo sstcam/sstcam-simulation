@@ -39,11 +39,12 @@ class Photoelectrons:
         charge = np.concatenate([self.charge, other.charge])
         return Photoelectrons(pixel=pixel, time=time, charge=charge)
 
-    def __eq__(self, other):
+    def __eq__(self, other: "Photoelectrons"):
         return (
             np.array_equal(self.pixel, other.pixel)
             & np.array_equal(self.time, other.time)
             & np.array_equal(self.charge, other.charge)
+            & (self.metadata == other.metadata)
         )
 
     def get_photoelectrons_per_pixel(self, n_pixels):
