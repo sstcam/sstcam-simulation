@@ -20,8 +20,11 @@ def test_photoelectrons():
     np.testing.assert_allclose(combined.charge, np.array([2, 5]))
 
     photoelectrons_3 = Photoelectrons(pixel, time, charge)
+    photoelectrons_4 = Photoelectrons(pixel, time, charge, dict(test=2))
+    photoelectrons_5 = Photoelectrons(pixel, time, charge, dict(test=2))
     assert photoelectrons_1 != photoelectrons_2
     assert photoelectrons_2 == photoelectrons_3
+    assert photoelectrons_4 == photoelectrons_5
 
 
 def test_get_photoelectrons_per_pixel():
@@ -48,3 +51,11 @@ def test_get_average_time_per_pixel():
     )
     time = photoelectrons.get_average_time_per_pixel(n_pixels=2)
     assert np.array_equal(time, np.array([35.0, 45.0]))
+
+
+def test_empty():
+    photoelectrons = Photoelectrons.empty()
+    assert photoelectrons.pixel.size == 0
+    assert photoelectrons.time.size == 0
+    assert photoelectrons.charge.size == 0
+    assert photoelectrons.pixel.dtype == np.int
