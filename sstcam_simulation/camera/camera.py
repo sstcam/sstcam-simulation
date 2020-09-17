@@ -98,3 +98,35 @@ class Camera:
         """
         with open(path, mode='rb') as file:
             return pickle.load(file)
+
+    @property
+    def ctapipe_subarray(self):
+        from ctapipe.instrument import TelescopeDescription, SubarrayDescription, \
+            CameraGeometry, CameraReadout, CameraDescription, OpticsDescription
+        import astropy.units as u
+
+        geom = CameraGeometry(
+            "sstcam",
+            self.mapping.pixel.i,
+            u.Quantity(self.mapping.pixel.x, 'm'),
+            u.Quantity(self.mapping.pixel.y, 'm'),
+            u.Quantity(self.mapping.pixel.size, 'm')**2,
+            'square'
+        )
+
+        readout = CameraReadout(
+            "sstcam",
+            u.Quantity(1/self.waveform_sample_width, "GHz"),
+            self.reference_pulse.pulse[None, :],
+            u.Quantity(self.reference_pulse.sample_width, "ns")
+        )
+
+        camera = CameraDescription("sstcam", geom, readout)
+        optics = OpticsDescription.from_name('SST-ASTRI')
+        telescope = TelescopeDescription("SST", "SST", optics, camera)
+        subarray = SubarrayDescription(
+            'toy',
+            tel_positions={1: [0, 0, 0] * u.m},
+            tel_descriptions={1: telescope},
+        )
+        return subarray
