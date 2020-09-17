@@ -6,6 +6,7 @@ import numpy as np
 
 
 def test_photoelectron_reader(tmp_path):
+    path = str(tmp_path / "test.h5")
     class EventTable(tables.IsDescription):
         test = tables.Float64Col()
         test2 = tables.Float64Col()
@@ -26,16 +27,16 @@ def test_photoelectron_reader(tmp_path):
     )
     pe_list = [pe_0, pe_1]
 
-    with PhotoelectronWriter(tmp_path.stem, EventTable) as writer:
+    with PhotoelectronWriter(path, EventTable) as writer:
         writer.append(pe_0)
         writer.append(pe_1)
 
-    reader = PhotoelectronReader(tmp_path.stem)
+    reader = PhotoelectronReader(path)
     assert reader._file.isopen
     reader.close()
     assert not reader._file.isopen
 
-    with PhotoelectronReader(tmp_path.stem) as reader:
+    with PhotoelectronReader(path) as reader:
         file = reader._file
         assert file.isopen
         for i, pe in enumerate(reader):

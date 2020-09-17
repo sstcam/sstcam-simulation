@@ -6,10 +6,11 @@ import pytest
 
 
 def test_photoelectron_writer(tmp_path):
+    path = str(tmp_path / "test.h5")
     class EventTable(tables.IsDescription):
         test = tables.Float64Col()
 
-    writer = PhotoelectronWriter(tmp_path.stem, EventTable)
+    writer = PhotoelectronWriter(path, EventTable)
     assert writer._file.isopen
     assert writer._file.root.data.photoelectron_arrival_pixel.nrows == 0
     assert writer._file.root.data.photoelectron_arrival_time.nrows == 0
@@ -22,7 +23,7 @@ def test_photoelectron_writer(tmp_path):
     class EventTable(tables.IsDescription):
         test2 = tables.Float64Col()
 
-    with PhotoelectronWriter(tmp_path.stem, EventTable) as writer:
+    with PhotoelectronWriter(path, EventTable) as writer:
         file = writer._file
         assert file.isopen
         assert writer._file.root.data.event_metadata.colnames == ["test2"]
@@ -30,6 +31,7 @@ def test_photoelectron_writer(tmp_path):
 
 
 def test_photoelectron_writer_append(tmp_path):
+    path = str(tmp_path / "test.h5")
     class EventTable(tables.IsDescription):
         test = tables.Float64Col()
 
@@ -62,7 +64,7 @@ def test_photoelectron_writer_append(tmp_path):
         assert np.array_equal(table[0][0], pe_0.metadata['test'])
         assert np.array_equal(table[1][0], pe_1.metadata['test'])
 
-    with PhotoelectronWriter(tmp_path.stem, EventTable) as writer:
+    with PhotoelectronWriter(path, EventTable) as writer:
         assert writer._file.root.data.photoelectron_arrival_pixel.nrows == 0
         assert writer._file.root.data.photoelectron_arrival_time.nrows == 0
         assert writer._file.root.data.photoelectron_measured_charge.nrows == 0
@@ -83,7 +85,7 @@ def test_photoelectron_writer_append(tmp_path):
 
         check_contents(pixel, time, charge, table)
 
-    with tables.File(tmp_path.stem, mode='r') as file:
+    with tables.File(path, mode='r') as file:
         pixel = file.root.data.photoelectron_arrival_pixel.read()
         time = file.root.data.photoelectron_arrival_time.read()
         charge = file.root.data.photoelectron_measured_charge.read()
@@ -91,7 +93,7 @@ def test_photoelectron_writer_append(tmp_path):
 
         check_contents(pixel, time, charge, table)
 
-    with PhotoelectronWriter(tmp_path.stem, EventTable) as writer:
+    with PhotoelectronWriter(path, EventTable) as writer:
         with pytest.raises(KeyError):
             writer.append(Photoelectrons(
                 pixel=np.full(1, 0),
@@ -103,7 +105,7 @@ def test_photoelectron_writer_append(tmp_path):
         assert writer._file.root.data.photoelectron_arrival_pixel.nrows == 0
         assert writer._file.root.data.event_metadata.nrows == 0
 
-    with PhotoelectronWriter(tmp_path.stem, EventTable) as writer:
+    with PhotoelectronWriter(path, EventTable) as writer:
         writer.append(Photoelectrons(
             pixel=np.full(1, 0),
             time=np.full(1, 1.1),
