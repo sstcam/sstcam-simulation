@@ -9,7 +9,7 @@ import pytest
 
 @pytest.fixture(scope="module")
 def acquisition():
-    camera = Camera(mapping=SSTCameraMapping(n_pixels=2))
+    camera = Camera(continuous_readout_duration=1000, mapping=SSTCameraMapping(n_pixels=2))
     acquisition = EventAcquisition(camera=camera)
     return acquisition
 
@@ -23,6 +23,18 @@ def test_get_continuous_readout(acquisition):
     argmax = readout.argmax(1) * acquisition.camera.continuous_readout_sample_width
     np.testing.assert_allclose(integral, photoelectrons.charge)
     np.testing.assert_allclose(argmax, photoelectrons.time)
+
+    # Outside of readout duration
+    photoelectrons = Photoelectrons(
+        pixel=np.array([0, 1, 1]),
+        time=np.array([999, 1000, 1001]),
+        charge=np.array([1.0, 2.0, 1.0])
+    )
+    readout = acquisition.get_continuous_readout(photoelectrons)
+    integral = readout.sum() * acquisition.camera.continuous_readout_sample_width
+    argmax = readout.argmax() * acquisition.camera.continuous_readout_sample_width
+    assert integral < 1
+    np.testing.assert_allclose(argmax, 999)
 
 
 def test_get_continuous_readout_with_noise():
