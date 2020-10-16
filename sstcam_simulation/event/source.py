@@ -212,3 +212,24 @@ class PhotoelectronSource:
             intensity=intensity,
             cherenkov_pulse_width=cherenkov_pulse_width,
         )
+
+    def resample_photoelectron_charge(self, pe: Photoelectrons) -> Photoelectrons:
+        """
+        Resample the charges of the photoelectrons from the spectrum defined in
+        the Camera
+
+        Parameters
+        ----------
+        pe : Photoelectrons
+
+        Returns
+        -------
+        Photoelectrons
+        """
+        rng = np.random.default_rng(seed=self.seed)
+        spectrum = self.camera.photoelectron_spectrum
+        n_photoelectrons = pe.pixel.size
+        charge = rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
+        return Photoelectrons(
+            pixel=pe.pixel, time=pe.time, charge=charge, metadata=pe.metadata
+        )

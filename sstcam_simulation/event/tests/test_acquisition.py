@@ -125,31 +125,3 @@ def test_get_sampled_waveform_sample_width():
     readout = acquisition.get_continuous_readout(pe)
     waveform = acquisition.get_sampled_waveform(readout)
     print(waveform.max())
-
-
-def test_resample_photoelectron_charge():
-    camera = Camera(
-        mapping=SSTCameraMapping(n_pixels=2),
-    )
-    pe_0 = Photoelectrons(
-        pixel=np.array([0, 1]),
-        time=np.array([30, 40]),
-        charge=np.array([1.0, 2.0]),
-        metadata=dict(test=2)
-    )
-    acquisition = EventAcquisition(camera=camera, seed=1)
-    pe_1 = acquisition.resample_photoelectron_charge(pe_0)
-    pe_2 = acquisition.resample_photoelectron_charge(pe_0)
-    acquisition = EventAcquisition(camera=camera, seed=2)
-    pe_3 = acquisition.resample_photoelectron_charge(pe_0)
-
-    assert np.array_equal(pe_0.pixel, pe_1.pixel)
-    assert np.array_equal(pe_1.pixel, pe_2.pixel)
-    assert np.array_equal(pe_2.pixel, pe_3.pixel)
-    assert np.array_equal(pe_0.time, pe_1.time)
-    assert np.array_equal(pe_1.time, pe_2.time)
-    assert np.array_equal(pe_2.time, pe_3.time)
-    assert not np.array_equal(pe_0.charge, pe_1.charge)
-    assert np.array_equal(pe_1.charge, pe_2.charge)
-    assert not np.array_equal(pe_2.charge, pe_3.charge)
-    assert pe_0.metadata == pe_1.metadata == pe_2.metadata == pe_3.metadata
