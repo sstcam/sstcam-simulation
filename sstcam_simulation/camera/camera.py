@@ -1,5 +1,5 @@
 from .mapping import SSTCameraMapping
-from .pulse import ReferencePulse, GaussianPulse
+from .pulse import PhotoelectronPulse, GaussianPulse
 from .spe import SPESpectrum, SiPMGentileSPE
 from .noise import ElectronicNoise, PerfectElectronics
 from .constants import WAVEFORM_SAMPLE_WIDTH, \
@@ -26,7 +26,7 @@ class Camera:
     digital_trigger_length: float = 8  # Unit: nanosecond
     lookback_time: float = 20  # Unit: nanosecond
     mapping: SSTCameraMapping = SSTCameraMapping()
-    reference_pulse: ReferencePulse = GaussianPulse()
+    photoelectron_pulse: PhotoelectronPulse = GaussianPulse()
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
     readout_noise: ElectronicNoise = PerfectElectronics()
     digitisation_noise: ElectronicNoise = PerfectElectronics()
@@ -117,8 +117,8 @@ class Camera:
         readout = CameraReadout(
             "sstcam",
             u.Quantity(1/self.waveform_sample_width, "GHz"),
-            self.reference_pulse.pulse[None, :],
-            u.Quantity(self.reference_pulse.sample_width, "ns")
+            self.photoelectron_pulse.amplitude[None, :],
+            u.Quantity(self.photoelectron_pulse.sample_width, "ns")
         )
 
         camera = CameraDescription("sstcam", geom, readout)

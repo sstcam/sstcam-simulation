@@ -73,8 +73,8 @@ class EventAcquisition:
 
         # Convolve with the reference pulse shape
         #  TODO: remove bottleneck
-        pulse = self.camera.reference_pulse.pulse
-        origin = self.camera.reference_pulse.origin
+        pulse = self.camera.photoelectron_pulse.amplitude
+        origin = self.camera.photoelectron_pulse.origin
         convolved = convolve1d(continuous_readout, pulse, mode="constant", origin=origin)
 
         # Add electronic noise
