@@ -1,9 +1,9 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
-from numba import njit, vectorize, float64
+from numba import njit, vectorize, float64, int64
 
 __all__ = [
-    "pmt_spe",
+    "single_gaussian",
     "sipm_gentile_spe",
     "SPESpectrum",
     "SiPMGentileSPE",
@@ -36,7 +36,7 @@ def normal_pdf(x, mean, std_deviation):
 
 
 @njit(fastmath=True)
-def pmt_spe(x, spe_sigma):
+def single_gaussian(x, spe_sigma):
     """
     Simple photomultiplier tube SPE, defined as a normal distribution
 
@@ -52,6 +52,30 @@ def pmt_spe(x, spe_sigma):
     ndarray
     """
     return normal_pdf(x, 1, spe_sigma)
+
+
+@vectorize([float64(int64, float64)], fastmath=True)
+def optical_crosstalk_probability(k, opct):
+    """
+    Calculate the probability for k microcells to be fired following the
+    generation of 1 photoelectron in the SiPM pixel
+
+    Parameters
+    ----------
+    k : int or ndarray
+        Number of total cells fired
+    opct : float or ndarray
+        Probability that more than 1 microcell fires following the generation
+        of 1 photoelectron in the SiPM
+
+    Returns
+    -------
+    float
+        Probability of k cells fired
+    """
+    if k <= 0:
+        return 0
+    return (1 - opct) * pow(opct, k - 1)
 
 
 @njit(fastmath=True)
@@ -74,7 +98,7 @@ def sipm_gentile_spe(x, spe_sigma, opct):
     pe_signal = np.zeros(x.size)
     # Loop over the possible total number of cells fired
     for k in range(1, 250):
-        pk = (1 - opct) * pow(opct, k - 1)
+        pk = optical_crosstalk_probability(k, opct)
         pe_sigma = np.sqrt(k * spe_sigma ** 2)
         pe_signal += pk * normal_pdf(x, k, pe_sigma)
 
@@ -130,7 +154,7 @@ class SPESpectrum(metaclass=ABCMeta):
 
         Returns
         -------
-        reference_pulse : ndarray
+        photoelectron_pulse : ndarray
             Probability for charge x (not-normalised)
         """
 
@@ -160,6 +184,15 @@ class PerfectPhotosensor(SPESpectrum):
 
     def _function(self, x):
         return np.ones(1)
+
+
+class SingleGaussianSPE(SPESpectrum):
+    def __init__(self, x_min=0, x_max=10, n_points=10000, spe_sigma=0.1):
+        self.spe_sigma = spe_sigma
+        super().__init__(x_min=x_min, x_max=x_max, n_points=n_points)
+
+    def _function(self, x):
+        return single_gaussian(x, self.spe_sigma)
 
 
 class SiPMGentileSPE(SPESpectrum):
