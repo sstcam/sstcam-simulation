@@ -13,7 +13,8 @@ __all__ = [
 class PhotoelectronPulse(metaclass=ABCMeta):
     def __init__(self, duration, mv_per_pe=None):
         """
-        Base for classes which define a reference pulse shape
+        Base for classes which define the reference pulse shape for a single
+        photoelectron.
 
         The pulse is evaluated on initialisation.
         For a new pulse to be defined, a new class should be initialised.
