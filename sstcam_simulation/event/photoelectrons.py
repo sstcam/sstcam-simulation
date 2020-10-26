@@ -34,6 +34,7 @@ class Photoelectrons:
         return self.pixel.size
 
     def __add__(self, other):
+        # TODO: keep metadata
         pixel = np.concatenate([self.pixel, other.pixel])
         time = np.concatenate([self.time, other.time])
         charge = np.concatenate([self.charge, other.charge])

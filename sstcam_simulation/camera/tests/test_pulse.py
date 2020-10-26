@@ -1,4 +1,5 @@
-from sstcam_simulation.camera.pulse import PhotoelectronPulse, GenericPulse
+from sstcam_simulation.camera.pulse import PhotoelectronPulse, GenericPulse, \
+    ReferencePulse
 from sstcam_simulation.camera.constants import CONTINUOUS_READOUT_SAMPLE_WIDTH
 import numpy as np
 from scipy.stats import norm
@@ -8,6 +9,9 @@ import pytest
 classes = PhotoelectronPulse.__subclasses__()
 # GenericPulse must be tested separately
 classes.remove(GenericPulse)
+
+# TODO: remove post-deprecation completion
+classes.remove(ReferencePulse)
 
 
 @pytest.mark.parametrize("ref_pulse_class", classes)

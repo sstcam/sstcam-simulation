@@ -1,12 +1,14 @@
 from .mapping import SSTCameraMapping
-from .pulse import PhotoelectronPulse, GaussianPulse
+from .pulse import PhotoelectronPulse, GaussianPulse, ReferencePulse
 from .spe import SPESpectrum, SiPMGentileSPE
 from .noise import ElectronicNoise, PerfectElectronics
 from .constants import WAVEFORM_SAMPLE_WIDTH, \
     CONTINUOUS_READOUT_SAMPLE_DIVISION, CONTINUOUS_READOUT_SAMPLE_WIDTH
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import numpy as np
 import pickle
+import warnings
+warnings.filterwarnings('default', module='sstcam_simulation')
 
 
 __all__ = [
@@ -27,9 +29,23 @@ class Camera:
     lookback_time: float = 20  # Unit: nanosecond
     mapping: SSTCameraMapping = SSTCameraMapping()
     photoelectron_pulse: PhotoelectronPulse = GaussianPulse()
+    reference_pulse: PhotoelectronPulse = field(default=None, repr=False, init=False)  #deprecated
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
     readout_noise: ElectronicNoise = PerfectElectronics()
     digitisation_noise: ElectronicNoise = PerfectElectronics()
+
+    @property
+    def reference_pulse(self):
+        msg = "reference_pulse is deprecated, replaced by photoelectron_pulse"
+        warnings.warn(msg, DeprecationWarning)
+        return self.photoelectron_pulse
+
+    @reference_pulse.setter
+    def reference_pulse(self, reference_pulse):
+        if reference_pulse is not None and type(reference_pulse) is not property:
+            msg = "reference_pulse is deprecated, replaced by photoelectron_pulse"
+            warnings.warn(msg, DeprecationWarning)
+            super().__setattr__('photoelectron_pulse', reference_pulse)
 
     @property
     def waveform_sample_width(self):

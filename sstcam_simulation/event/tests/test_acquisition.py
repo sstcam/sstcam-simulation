@@ -39,9 +39,11 @@ def test_get_continuous_readout(acquisition):
 
 def test_get_continuous_readout_with_noise():
     pulse = GaussianPulse()
-    noise = GaussianNoise(stddev=pulse.peak_height, seed=1)
+    noise = GaussianNoise(stddev=pulse.height, seed=1)
     camera = Camera(
-        reference_pulse=pulse,
+        continuous_readout_duration=1000,
+        n_waveform_samples=1000,
+        photoelectron_pulse=pulse,
         readout_noise=noise,
         mapping=SSTCameraMapping(n_pixels=1)
     )
@@ -50,8 +52,12 @@ def test_get_continuous_readout_with_noise():
         pixel=np.array([], dtype=np.int), time=np.array([]), charge=np.array([])
     )
     readout = acquisition.get_continuous_readout(photoelectrons)
-    stddev_pe = readout.std() / camera.reference_pulse.peak_height
+    stddev_pe = readout.std() / camera.photoelectron_pulse.height
     np.testing.assert_allclose(stddev_pe, 1, rtol=1e-2)
+
+    waveform = acquisition.get_sampled_waveform(readout)
+    predicted_stddev = noise.stddev / np.sqrt(camera.continuous_readout_sample_division)
+    np.testing.assert_allclose(waveform.std(), predicted_stddev, rtol=1e-2)
 
 
 def test_get_sampled_waveform():

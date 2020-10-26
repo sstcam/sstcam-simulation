@@ -2,9 +2,12 @@ from .constants import CONTINUOUS_READOUT_SAMPLE_WIDTH
 from abc import ABCMeta, abstractmethod
 import numpy as np
 from scipy.stats import norm
+import warnings
+warnings.filterwarnings('default', module='sstcam_simulation')
 
 __all__ = [
     "PhotoelectronPulse",
+    "ReferencePulse",
     "GenericPulse",
     "GaussianPulse",
 ]
@@ -35,18 +38,59 @@ class PhotoelectronPulse(metaclass=ABCMeta):
 
         # Normalise the pulse to the correct units
         if mv_per_pe is None:
-            y_scale = amplitude.sum() * CONTINUOUS_READOUT_SAMPLE_WIDTH
+            self._y_scale = amplitude.sum() * CONTINUOUS_READOUT_SAMPLE_WIDTH
         else:
-            y_scale = amplitude.max() / mv_per_pe
-        self.amplitude = amplitude / y_scale
+            self._y_scale = amplitude.max() / mv_per_pe
+        self.amplitude = amplitude / self._y_scale
 
         self.origin = self.amplitude.argmax() - self.amplitude.size // 2
         self.height = self.amplitude.max()
         self.area = self.amplitude.sum() * CONTINUOUS_READOUT_SAMPLE_WIDTH
 
     @property
+    def y_scale(self):
+        msg = "y_scale is deprecated"
+        warnings.warn(msg, DeprecationWarning)
+        return self._y_scale
+
+    @property
+    def pulse(self):
+        msg = "pulse attribute is deprecated, replaced by amplitude"
+        warnings.warn(msg, DeprecationWarning)
+        return self.amplitude
+
+    @property
+    def peak_height(self):
+        msg = "peak_height attribute is deprecated, replaced by height"
+        warnings.warn(msg, DeprecationWarning)
+        return self.height
+
+    @property
     def sample_width(self):
         return self.time[1] - self.time[0]
+
+    @abstractmethod
+    def _function(self, time):
+        """
+        Function that describes the reference pulse shape.
+
+        Parameters
+        ----------
+        time : ndarray
+            Time in ns to evaluate the pulse at
+
+        Returns
+        -------
+        photoelectron_pulse : ndarray
+            Y values of reference pulse at the requested times  (not-normalised)
+        """
+
+
+class ReferencePulse(PhotoelectronPulse):
+    def __init__(self, duration):
+        msg = "ReferencePulse class is deprecated, replaced by PhotoelectronPulse"
+        warnings.warn(msg, DeprecationWarning)
+        super().__init__(duration)
 
     @abstractmethod
     def _function(self, time):
