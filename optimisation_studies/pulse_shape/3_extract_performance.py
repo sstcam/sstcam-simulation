@@ -26,8 +26,8 @@ def obtain_df_files(h5_paths):
         assert exists(camera_path)
 
         camera = Camera.load(camera_path)
-        x = camera.reference_pulse.time
-        y = camera.reference_pulse.pulse
+        x = camera.photoelectron_pulse.time
+        y = camera.photoelectron_pulse.amplitude
 
         pulse_width, undershoot_width = extract_width(x, y)
         if sigma1 == 0:

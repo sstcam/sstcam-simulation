@@ -85,7 +85,7 @@ def main():
                 undershoot_width[isigma0, isigma1] = width_neg if sigma1 > 0 else 0
 
                 pulse = GenericPulse(x, y)
-                camera = Camera(**camera_kwargs, reference_pulse=pulse)
+                camera = Camera(**camera_kwargs, photoelectron_pulse=pulse)
                 name = f"undershoot_{ratio:.2f}_{sigma0:.2f}_{sigma1:.2f}.pkl"
                 camera.save(join(output_dir, name))
 
