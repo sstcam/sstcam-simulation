@@ -1,4 +1,4 @@
-from sstcam_simulation.event.photoelectrons import Photoelectrons
+from sstcam_simulation import Photoelectrons
 from sstcam_simulation.camera.mapping import SSTCameraMapping
 from eventio import SimTelFile
 import numpy as np

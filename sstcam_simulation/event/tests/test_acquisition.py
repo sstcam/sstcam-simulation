@@ -1,4 +1,4 @@
-from sstcam_simulation.event.photoelectrons import Photoelectrons
+from sstcam_simulation.photoelectrons import Photoelectrons
 from sstcam_simulation.camera.noise import GaussianNoise
 from sstcam_simulation.camera.pulse import GaussianPulse
 from sstcam_simulation.event.acquisition import EventAcquisition

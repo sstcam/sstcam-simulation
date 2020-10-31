@@ -1,6 +1,6 @@
 from sstcam_simulation.io.photoelectron_writer import PhotoelectronWriter
 from sstcam_simulation.io.photoelectron_reader import PhotoelectronReader
-from sstcam_simulation.event.photoelectrons import Photoelectrons
+from sstcam_simulation.photoelectrons import Photoelectrons
 import tables
 import numpy as np
 

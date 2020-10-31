@@ -1,6 +1,6 @@
 import numpy as np
 from ..camera import Camera
-from .photoelectrons import Photoelectrons
+from ..photoelectrons import Photoelectrons
 from .cherenkov import get_cherenkov_shower_image
 
 __all__ = ["PhotoelectronSource"]
@@ -45,9 +45,9 @@ class PhotoelectronSource:
         rng = np.random.default_rng(seed=self.seed)
 
         # Number of NSB photoelectrons per pixel in this event
-        length = self.camera.continuous_readout_duration
+        duration = self.camera.continuous_readout_duration
         n_pixels = self.camera.mapping.n_pixels
-        avg_photons_per_waveform = rate * 1e6 * length * 1e-9
+        avg_photons_per_waveform = rate * 1e6 * duration * 1e-9
         n_nsb_per_pixel = rng.poisson(avg_photons_per_waveform, n_pixels)
 
         # Pixel containing each photoelectron
@@ -55,7 +55,6 @@ class PhotoelectronSource:
 
         # Uniformly distribute NSB photoelectrons in time across waveform
         n_photoelectrons = nsb_pixel.size
-        duration = self.camera.continuous_readout_duration
         nsb_time = rng.uniform(0, duration, size=n_photoelectrons)
 
         # Get the charge reported by the photosensor (Inverse Transform Sampling)

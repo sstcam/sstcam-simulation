@@ -1,6 +1,6 @@
 from ..camera import Camera
 from .trigger import Trigger, NNSuperpixelAboveThreshold
-from .photoelectrons import Photoelectrons
+from ..photoelectrons import Photoelectrons
 import numpy as np
 from scipy.ndimage import convolve1d
 

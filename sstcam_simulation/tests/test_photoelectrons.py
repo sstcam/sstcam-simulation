@@ -1,4 +1,4 @@
-from sstcam_simulation.event import Photoelectrons
+from sstcam_simulation.photoelectrons import Photoelectrons
 import numpy as np
 
 

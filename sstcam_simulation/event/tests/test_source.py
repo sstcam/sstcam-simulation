@@ -1,5 +1,6 @@
 from sstcam_simulation.camera import Camera, SSTCameraMapping
-from sstcam_simulation.event import PhotoelectronSource, Photoelectrons, EventAcquisition
+from sstcam_simulation.event import PhotoelectronSource, EventAcquisition
+from sstcam_simulation.photoelectrons import Photoelectrons
 import numpy as np
 
 

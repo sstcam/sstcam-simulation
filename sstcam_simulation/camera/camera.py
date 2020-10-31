@@ -1,5 +1,5 @@
 from .mapping import SSTCameraMapping
-from .pulse import PhotoelectronPulse, GaussianPulse, ReferencePulse
+from .pulse import PhotoelectronPulse, GaussianPulse
 from .spe import SPESpectrum, SiPMGentileSPE
 from .noise import ElectronicNoise, PerfectElectronics
 from .constants import WAVEFORM_SAMPLE_WIDTH, \

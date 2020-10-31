@@ -1,6 +1,6 @@
 import tables
 from typing import Type
-from sstcam_simulation.event.photoelectrons import Photoelectrons
+from sstcam_simulation import Photoelectrons
 
 FILTERS = tables.Filters(
     complevel=5,  # compression medium, tradeoff between speed and compression
