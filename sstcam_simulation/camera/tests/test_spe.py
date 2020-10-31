@@ -1,5 +1,7 @@
+from sstcam_simulation import Photoelectrons
 from sstcam_simulation.camera.spe import single_gaussian, sipm_gentile_spe, \
     SPESpectrum, optical_crosstalk_probability
+from inspect import isabstract
 import numpy as np
 import pytest
 
@@ -34,8 +36,30 @@ def test_sipm_gentile():
 
 @pytest.mark.parametrize("spectrum_class", SPESpectrum.__subclasses__())
 def test_spe_spectra(spectrum_class):
-    spectrum = spectrum_class()
-    assert spectrum.x.size == spectrum.n_points
-    np.testing.assert_allclose(np.sum(spectrum.pdf), 1)
-    np.testing.assert_allclose(np.average(spectrum.x, weights=spectrum.pdf), 1)
-    assert spectrum.excess_noise_factor >= 1
+    if isabstract(spectrum_class):
+        return
+
+    n_photoelectrons = 10000
+    photoelectrons = Photoelectrons(
+        pixel=np.zeros(n_photoelectrons),
+        time=np.zeros(n_photoelectrons),
+        charge=np.ones(n_photoelectrons),
+        metadata=dict(test="test"),
+    )
+
+    spectrum = spectrum_class(normalise_charge=True)
+    result = spectrum.apply(photoelectrons)
+    mean = result.charge.mean()
+    std = result.charge.std()
+    assert result is not photoelectrons
+    np.testing.assert_allclose(spectrum.average, 1, rtol=1e-3)
+    np.testing.assert_allclose(mean, 1, rtol=1e-3)
+    np.testing.assert_allclose(1+std**2, spectrum.excess_noise_factor, rtol=1e-3)
+
+    spectrum = spectrum_class(normalise_charge=False)
+    result = spectrum.apply(photoelectrons)
+    mean = result.charge.mean()
+    std = result.charge.std()
+    assert result is not photoelectrons
+    np.testing.assert_allclose(mean, spectrum.average, rtol=1e-3)
+    np.testing.assert_allclose(1+std**2, spectrum.excess_noise_factor, rtol=1e-3)

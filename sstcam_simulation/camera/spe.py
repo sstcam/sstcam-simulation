@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import numpy as np
 from numba import njit, vectorize, float64, int64
+from sstcam_simulation import Photoelectrons
 
 __all__ = [
     "single_gaussian",
@@ -106,10 +107,10 @@ def sipm_gentile_spe(x, spe_sigma, opct):
 
 
 class SPESpectrum(metaclass=ABCMeta):
-    def __init__(self, x_min, x_max, n_points):
+    def __init__(self, normalise_charge=True):
         """
         Base for classes which define the probability density function of the
-        charge for a single photoelectron.
+        charge for a single photon detection.
 
         NOTE: this is **not** the spectrum for an "average illumination" i.e. a Poisson
         average close to one. This is the probability density function of the
@@ -122,6 +123,88 @@ class SPESpectrum(metaclass=ABCMeta):
 
         Parameters
         ----------
+        normalise_charge : bool
+            If True, the charge is normalised to in units of photoelectrons. The
+            average charge produced for a single photon detection will equal 1.
+            If False, the charge in in units of number of fired microcells.
+        """
+        self.normalise_charge = normalise_charge
+
+    @abstractmethod
+    def apply(self, photoelectrons):
+        """
+        Apply the spectrum to the photoelectrons
+
+        Parameters
+        ----------
+        photoelectrons : Photoelectrons
+            Container for the photoelectron arrays
+
+        Returns
+        -------
+        Photoelectrons
+            Container for the photoelectron arrays with the spectrum applied
+        """
+
+    @property
+    @abstractmethod
+    def average(self):
+        """
+        Obtain the Excess Noise Factor (ENF) of the spectrum. This factor is
+        commonly used to encompass the multiplicative errors in the
+        amplification process of a photosensor, and directly informs about the
+        charge resolution.
+
+        Returns
+        -------
+        float
+        """
+
+    @property
+    @abstractmethod
+    def excess_noise_factor(self):
+        """
+        Obtain the Excess Noise Factor (ENF) of the spectrum. This factor is
+        commonly used to encompass the multiplicative errors in the
+        amplification process of a photosensor, and directly informs about the
+        charge resolution.
+
+        Returns
+        -------
+        float
+        """
+
+
+class PerfectPhotosensor(SPESpectrum):
+    """
+    SPE spectrum for a perfect photosensor, which always reports the exact
+    number of photoelectrons
+    """
+
+    def apply(self, photoelectrons):
+        return Photoelectrons(
+            pixel=photoelectrons.pixel,
+            time=photoelectrons.time,
+            charge=np.ones(len(photoelectrons)),
+            metadata=photoelectrons.metadata
+        )
+
+    @property
+    def average(self):
+        return 1
+
+    @property
+    def excess_noise_factor(self):
+        return 1
+
+
+class SPESpectrumTemplate(SPESpectrum):
+    def __init__(self, x_min=0, x_max=10, n_points=10000, normalise_charge=True):
+        """
+        Subset of SPESpectrum which define the spectrum in terms of a PDF template
+
+        Parameters
+        ----------
         x_min : float
             Minimum charge at which the spectrum is defined (Unit: p.e.)
         x_max : float
@@ -129,18 +212,33 @@ class SPESpectrum(metaclass=ABCMeta):
         n_points: int
             Number of points between x_min and x_max used to define the spectrum
         """
+        super().__init__(normalise_charge=normalise_charge)
         self.x_min = x_min
         self.x_max = x_max
         self.n_points = n_points
 
         # Calculate normalisation scale factors
-        x = np.linspace(self.x_min, self.x_max, self.n_points)
-        pdf = self._function(x)  # Evaluate at x
-        x_scale = np.average(x, weights=pdf)
-        pdf_scale = pdf.sum()
+        self.x = np.linspace(self.x_min, self.x_max, self.n_points)
+        self.pdf = self._function(self.x)  # Evaluate at x
+        pdf_scale = self.pdf.sum()
 
-        self.x = x / x_scale
-        self.pdf = pdf / pdf_scale
+        # Normalise X axis
+        if normalise_charge:
+            x_scale = np.average(self.x, weights=self.pdf)
+            self.x /= x_scale
+
+        # Normalise Y axis
+        self.pdf /= pdf_scale
+
+    def apply(self, photoelectrons, seed=None):
+        rng = np.random.default_rng(seed=seed)
+        charge = rng.choice(self.x, size=len(photoelectrons), p=self.pdf)
+        return Photoelectrons(
+            pixel=photoelectrons.pixel,
+            time=photoelectrons.time,
+            charge=charge,
+            metadata=photoelectrons.metadata
+        )
 
     @abstractmethod
     def _function(self, x):
@@ -159,63 +257,32 @@ class SPESpectrum(metaclass=ABCMeta):
         """
 
     @property
-    def excess_noise_factor(self):
-        """
-        Obtain the Excess Noise Factor (ENF) of the spectrum. This factor is
-        commonly used to encompass the multiplicative errors in the
-        amplification process of a photosensor, and directly informs about the
-        charge resolution.
+    def average(self):
+        return np.average(self.x, weights=self.pdf)
 
-        Returns
-        -------
-        float
-        """
+    @property
+    def excess_noise_factor(self):
         variance = np.average((self.x - 1) ** 2, weights=self.pdf)
         return 1 + variance
 
 
-class PerfectPhotosensor(SPESpectrum):
-    def __init__(self):
-        """
-        SPE spectrum for a perfect photosensor, which always reports the exact
-        number of photoelectrons that are generated inside it
-        """
-        super().__init__(x_min=1, x_max=1, n_points=1)
-
-    def _function(self, x):
-        return np.ones(1)
-
-
-class SingleGaussianSPE(SPESpectrum):
-    def __init__(self, x_min=0, x_max=10, n_points=10000, spe_sigma=0.1):
-        self.spe_sigma = spe_sigma
-        super().__init__(x_min=x_min, x_max=x_max, n_points=n_points)
-
-    def _function(self, x):
-        return single_gaussian(x, self.spe_sigma)
-
-
-class SiPMGentileSPE(SPESpectrum):
-    def __init__(self, x_min=0, x_max=10, n_points=10000, spe_sigma=0.1, opct=0.2):
+class SiPMGentileSPE(SPESpectrumTemplate):
+    def __init__(self, spe_sigma=0.1, opct=0.2, **kwargs):
         """
         SPE spectrum for an SiPM, using the Gentile formula
 
         Parameters
         ----------
-        x_min : float
-            Minimum charge at which the spectrum is defined (Unit: p.e.)
-        x_max : float
-            Maximum charge at which the spectrum is defined (Unit: p.e.)
-        n_points: int
-            Number of points between x_min and x_max used to define the spectrum
         spe_sigma : float
             Width of the single photoelectron peak
         opct : float
             Probability of optical crosstalk
+        kwargs
+            Keyword arguments for SPESpectrum
         """
         self.spe_sigma = spe_sigma
         self.opct = opct
-        super().__init__(x_min=x_min, x_max=x_max, n_points=n_points)
+        super().__init__(**kwargs)
 
     def _function(self, x):
         return sipm_gentile_spe(x, self.spe_sigma, self.opct)
