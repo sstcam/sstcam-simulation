@@ -47,8 +47,10 @@ def test_spe_spectra(spectrum_class):
         metadata=dict(test="test"),
     )
 
+    rng = np.random.RandomState(seed=1)
+
     spectrum = spectrum_class(normalise_charge=True)
-    result = spectrum.apply(photoelectrons)
+    result = spectrum.apply(photoelectrons, rng)
     mean = result.charge.mean()
     std = result.charge.std()
     assert result is not photoelectrons
@@ -57,7 +59,7 @@ def test_spe_spectra(spectrum_class):
     np.testing.assert_allclose(1+std**2, spectrum.excess_noise_factor, rtol=1e-3)
 
     spectrum = spectrum_class(normalise_charge=False)
-    result = spectrum.apply(photoelectrons)
+    result = spectrum.apply(photoelectrons, rng)
     mean = result.charge.mean()
     std = result.charge.std()
     assert result is not photoelectrons

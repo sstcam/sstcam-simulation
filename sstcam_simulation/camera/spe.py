@@ -131,7 +131,7 @@ class SPESpectrum(metaclass=ABCMeta):
         self.normalise_charge = normalise_charge
 
     @abstractmethod
-    def apply(self, photoelectrons):
+    def apply(self, photoelectrons, rng):
         """
         Apply the spectrum to the photoelectrons
 
@@ -139,6 +139,8 @@ class SPESpectrum(metaclass=ABCMeta):
         ----------
         photoelectrons : Photoelectrons
             Container for the photoelectron arrays
+        rng : RandomState
+            Numpy RandomState for propagating seed
 
         Returns
         -------
@@ -181,7 +183,7 @@ class PerfectPhotosensor(SPESpectrum):
     number of photoelectrons
     """
 
-    def apply(self, photoelectrons):
+    def apply(self, photoelectrons, rng):
         return Photoelectrons(
             pixel=photoelectrons.pixel,
             time=photoelectrons.time,
@@ -230,8 +232,8 @@ class SPESpectrumTemplate(SPESpectrum):
         # Normalise Y axis
         self.pdf /= pdf_scale
 
-    def apply(self, photoelectrons, seed=None):
-        rng = np.random.default_rng(seed=seed)
+    def apply(self, photoelectrons, rng):
+        # Inverse Transform Sampling
         charge = rng.choice(self.x, size=len(photoelectrons), p=self.pdf)
         return Photoelectrons(
             pixel=photoelectrons.pixel,
