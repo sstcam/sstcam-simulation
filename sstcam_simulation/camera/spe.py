@@ -8,6 +8,8 @@ __all__ = [
     "sipm_gentile_spe",
     "SPESpectrum",
     "SiPMGentileSPE",
+    "SiPMPrompt",
+    "SiPMDelayed"
 ]
 
 

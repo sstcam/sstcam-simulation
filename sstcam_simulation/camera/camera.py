@@ -2,6 +2,7 @@ from .mapping import SSTCameraMapping
 from .pulse import PhotoelectronPulse, GaussianPulse
 from .spe import SPESpectrum, SiPMGentileSPE
 from .noise import ElectronicNoise, PerfectElectronics
+from .coupling import Coupling, NoCoupling
 from .constants import WAVEFORM_SAMPLE_WIDTH, \
     CONTINUOUS_READOUT_SAMPLE_DIVISION, CONTINUOUS_READOUT_SAMPLE_WIDTH
 from dataclasses import dataclass, field
@@ -33,6 +34,7 @@ class Camera:
     photoelectron_spectrum: SPESpectrum = SiPMGentileSPE()
     readout_noise: ElectronicNoise = PerfectElectronics()
     digitisation_noise: ElectronicNoise = PerfectElectronics()
+    coupling: Coupling = NoCoupling()
 
     @property
     def reference_pulse(self):

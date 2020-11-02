@@ -81,9 +81,9 @@ class EventAcquisition:
         noisy = self.camera.readout_noise.add_to_readout(convolved)
 
         # Apply coupling (e.g. AC coupling)
-        # coupled = self.camera.coupling.apply_to_readout(noisy)
+        coupled = self.camera.coupling.apply_to_readout(noisy)
 
-        return noisy
+        return coupled
 
     def get_trigger(self, continuous_readout):
         """
