@@ -106,6 +106,19 @@ def sipm_gentile_spe(x, spe_sigma, opct):
     return pe_signal
 
 
+def _generate_opct_pe(photoelectrons, rng, ipe, probability):
+    n_initial = len(photoelectrons)
+    n_repeat = rng.choice(ipe, p=probability, size=n_initial) - 1
+    n_new = np.sum(n_repeat)
+
+    # Repeat the existing photoelectrons to obtain the crosstalk photoelectrons
+    time = np.repeat(photoelectrons.time, n_repeat)
+    pixel = np.repeat(photoelectrons.pixel, n_repeat)
+    charge = np.ones(n_new)
+    initial = ~np.repeat(photoelectrons.initial, n_repeat)
+    return Photoelectrons(pixel=pixel, time=time, charge=charge, initial=initial)
+
+
 class SPESpectrum(metaclass=ABCMeta):
     def __init__(self, normalise_charge=True):
         """
@@ -264,7 +277,8 @@ class SPESpectrumTemplate(SPESpectrum):
 
     @property
     def excess_noise_factor(self):
-        variance = np.average((self.x - 1) ** 2, weights=self.pdf)
+        #TODO
+        variance = np.average((self.x - self.average) ** 2, weights=self.pdf)
         return 1 + variance
 
 
@@ -288,3 +302,89 @@ class SiPMGentileSPE(SPESpectrumTemplate):
 
     def _function(self, x):
         return sipm_gentile_spe(x, self.spe_sigma, self.opct)
+
+
+class SiPMPrompt(SPESpectrum):
+    def __init__(self, spe_sigma=0.1, opct=0.2, **kwargs):
+        """
+        SPE spectrum for an SiPM, creating additional prompt photoelectrons
+
+        Parameters
+        ----------
+        spe_sigma : float
+            Width of the single photoelectron peak
+        opct : float
+            Probability of optical crosstalk
+        kwargs
+            Keyword arguments for SPESpectrum
+        """
+        self.spe_sigma = spe_sigma
+        self.opct = opct
+        self._ipe = np.arange(1, 250)
+        self._p = optical_crosstalk_probability(self._ipe, opct)
+        self._scale = 1/(1-self.opct)
+        super().__init__(**kwargs)
+
+    def apply(self, photoelectrons, rng):
+        pe_opct = _generate_opct_pe(photoelectrons, rng, self._ipe, self._p)
+        pe_total = photoelectrons + pe_opct
+
+        # Fluctuate the charge
+        pe_total.charge = rng.normal(1, self.spe_sigma, pe_total.charge.size)
+        if self.normalise_charge:
+            pe_total.charge /= self._scale
+
+        return pe_total
+
+    @property
+    def average(self):
+        return 1 if self.normalise_charge else self._scale
+
+    @property
+    def excess_noise_factor(self):
+        #TODO
+        return 1 + self.opct
+
+
+class SiPMDelayed(SPESpectrum):
+    def __init__(self, spe_sigma=0.1, opct=0.2, time_constant=19.8, **kwargs):
+        """
+        SPE spectrum for an SiPM, creating additional delayed photoelectrons
+
+        Parameters
+        ----------
+        spe_sigma : float
+            Width of the single photoelectron peak
+        opct : float
+            Probability of optical crosstalk
+        kwargs
+            Keyword arguments for SPESpectrum
+        """
+        self.spe_sigma = spe_sigma
+        self.opct = opct
+        self.time_constant = time_constant
+        self._ipe = np.arange(1, 250)
+        self._p = optical_crosstalk_probability(self._ipe, opct)
+        self._scale = 1/(1-self.opct)
+        super().__init__(**kwargs)
+
+    def apply(self, photoelectrons, rng):
+        pe_opct = _generate_opct_pe(photoelectrons, rng, self._ipe, self._p)
+        pe_opct.time += rng.exponential(self.time_constant, size=pe_opct.time.size)
+        pe_total = photoelectrons + pe_opct
+
+        # Fluctuate the charge
+        pe_total.charge = rng.normal(1, self.spe_sigma, pe_total.charge.size)
+        if self.normalise_charge:
+            pe_total.charge /= self._scale
+
+        return pe_total
+
+    @property
+    def average(self):
+        return 1 if self.normalise_charge else self._scale
+
+    @property
+    def excess_noise_factor(self):
+        #TODO
+        return 1 + self.opct
