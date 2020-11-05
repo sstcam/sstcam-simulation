@@ -90,7 +90,16 @@ class ACOffsetCoupling(Coupling):
         spectrum_average : float
             Average charge measured for 1 initial photoelectron
         """
-        self.offset = nsb_rate * 1e6 * pulse_area * 1e-9 * spectrum_average
+        self._nsb_rate = nsb_rate
+        self._pulse_area = pulse_area
+        self._spectrum_average = spectrum_average
+
+    @property
+    def offset(self):
+        return self._nsb_rate * 1e6 * self._pulse_area * 1e-9 * self._spectrum_average
+
+    def update_nsb_rate(self, nsb_rate):
+        self._nsb_rate = nsb_rate
 
     def apply_to_readout(self, readout):
         return readout - self.offset

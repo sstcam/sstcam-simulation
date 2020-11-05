@@ -116,3 +116,21 @@ def test_ac_offset_coupling():
     coupling = ACOffsetCoupling(nsb_rate, pulse_area, spectrum_average)
     coupled = coupling.apply_to_readout(readout)
     np.testing.assert_allclose(coupled.mean(), 0, atol=0.5)
+
+
+def test_ac_offset_coupling_update_nsb():
+    nsb_rate = 100
+    camera, readout = get_camera_and_readout(
+        pulse_width=10,
+        mv_per_pe=None,
+        nsb_rate=nsb_rate,
+        spectrum=SiPMGentileSPE(opct=0.2, normalise_charge=True)
+    )
+    pulse_area = camera.photoelectron_pulse.area
+    spectrum_average = camera.photoelectron_spectrum.average
+    coupling = ACOffsetCoupling(2*nsb_rate, pulse_area, spectrum_average)
+    coupled = coupling.apply_to_readout(readout)
+    np.testing.assert_allclose(coupled.mean(), -coupling.offset, atol=0.5)
+    coupling.update_nsb_rate(nsb_rate)
+    coupled = coupling.apply_to_readout(readout)
+    np.testing.assert_allclose(coupled.mean(), 0, atol=0.5)
