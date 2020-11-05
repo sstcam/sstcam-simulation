@@ -17,5 +17,6 @@ dependencies:
   - pytest
   - notebook
   - ctapipe>=0.8
+  - eventio>=1.4.1
   - pip:
       - "--editable=git+https://github.com/sstcam/CHECLabPy#egg=CHECLabPy"

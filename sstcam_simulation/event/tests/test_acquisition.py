@@ -1,4 +1,4 @@
-from sstcam_simulation.event.photoelectrons import Photoelectrons
+from sstcam_simulation.photoelectrons import Photoelectrons
 from sstcam_simulation.camera.noise import GaussianNoise
 from sstcam_simulation.camera.pulse import GaussianPulse
 from sstcam_simulation.event.acquisition import EventAcquisition
@@ -39,9 +39,11 @@ def test_get_continuous_readout(acquisition):
 
 def test_get_continuous_readout_with_noise():
     pulse = GaussianPulse()
-    noise = GaussianNoise(stddev=pulse.peak_height, seed=1)
+    noise = GaussianNoise(stddev=pulse.height, seed=1)
     camera = Camera(
-        reference_pulse=pulse,
+        continuous_readout_duration=1000,
+        n_waveform_samples=1000,
+        photoelectron_pulse=pulse,
         readout_noise=noise,
         mapping=SSTCameraMapping(n_pixels=1)
     )
@@ -50,8 +52,12 @@ def test_get_continuous_readout_with_noise():
         pixel=np.array([], dtype=np.int), time=np.array([]), charge=np.array([])
     )
     readout = acquisition.get_continuous_readout(photoelectrons)
-    stddev_pe = readout.std() / camera.reference_pulse.peak_height
+    stddev_pe = readout.std() / camera.photoelectron_pulse.height
     np.testing.assert_allclose(stddev_pe, 1, rtol=1e-2)
+
+    waveform = acquisition.get_sampled_waveform(readout)
+    predicted_stddev = noise.stddev / np.sqrt(camera.continuous_readout_sample_division)
+    np.testing.assert_allclose(waveform.std(), predicted_stddev, rtol=1e-2)
 
 
 def test_get_sampled_waveform():
@@ -125,31 +131,3 @@ def test_get_sampled_waveform_sample_width():
     readout = acquisition.get_continuous_readout(pe)
     waveform = acquisition.get_sampled_waveform(readout)
     print(waveform.max())
-
-
-def test_resample_photoelectron_charge():
-    camera = Camera(
-        mapping=SSTCameraMapping(n_pixels=2),
-    )
-    pe_0 = Photoelectrons(
-        pixel=np.array([0, 1]),
-        time=np.array([30, 40]),
-        charge=np.array([1.0, 2.0]),
-        metadata=dict(test=2)
-    )
-    acquisition = EventAcquisition(camera=camera, seed=1)
-    pe_1 = acquisition.resample_photoelectron_charge(pe_0)
-    pe_2 = acquisition.resample_photoelectron_charge(pe_0)
-    acquisition = EventAcquisition(camera=camera, seed=2)
-    pe_3 = acquisition.resample_photoelectron_charge(pe_0)
-
-    assert np.array_equal(pe_0.pixel, pe_1.pixel)
-    assert np.array_equal(pe_1.pixel, pe_2.pixel)
-    assert np.array_equal(pe_2.pixel, pe_3.pixel)
-    assert np.array_equal(pe_0.time, pe_1.time)
-    assert np.array_equal(pe_1.time, pe_2.time)
-    assert np.array_equal(pe_2.time, pe_3.time)
-    assert not np.array_equal(pe_0.charge, pe_1.charge)
-    assert np.array_equal(pe_1.charge, pe_2.charge)
-    assert not np.array_equal(pe_2.charge, pe_3.charge)
-    assert pe_0.metadata == pe_1.metadata == pe_2.metadata == pe_3.metadata

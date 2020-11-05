@@ -1,6 +1,6 @@
 from ..camera import Camera
 from .trigger import Trigger, NNSuperpixelAboveThreshold
-from .photoelectrons import Photoelectrons
+from ..photoelectrons import Photoelectrons
 import numpy as np
 from scipy.ndimage import convolve1d
 
@@ -33,27 +33,6 @@ class EventAcquisition:
         self.trigger = trigger
         if self.trigger is None:
             self.trigger = NNSuperpixelAboveThreshold(camera)
-
-    def resample_photoelectron_charge(self, pe: Photoelectrons) -> Photoelectrons:
-        """
-        Resample the charges of the photoelectrons from the spectrum defined in
-        the Camera
-
-        Parameters
-        ----------
-        pe : Photoelectrons
-
-        Returns
-        -------
-        Photoelectrons
-        """
-        rng = np.random.default_rng(seed=self.seed)
-        spectrum = self.camera.photoelectron_spectrum
-        n_photoelectrons = pe.pixel.size
-        charge = rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
-        return Photoelectrons(
-            pixel=pe.pixel, time=pe.time, charge=charge, metadata=pe.metadata
-        )
 
     def get_continuous_readout(self, photoelectrons):
         """
@@ -94,14 +73,17 @@ class EventAcquisition:
 
         # Convolve with the reference pulse shape
         #  TODO: remove bottleneck
-        pulse = self.camera.reference_pulse.pulse
-        origin = self.camera.reference_pulse.origin
+        pulse = self.camera.photoelectron_pulse.amplitude
+        origin = self.camera.photoelectron_pulse.origin
         convolved = convolve1d(continuous_readout, pulse, mode="constant", origin=origin)
 
         # Add electronic noise
         noisy = self.camera.readout_noise.add_to_readout(convolved)
 
-        return noisy
+        # Apply coupling (e.g. AC coupling)
+        coupled = self.camera.coupling.apply_to_readout(noisy)
+
+        return coupled
 
     def get_trigger(self, continuous_readout):
         """

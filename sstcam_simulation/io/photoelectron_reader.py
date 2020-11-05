@@ -1,6 +1,5 @@
-from sstcam_simulation.event.photoelectrons import Photoelectrons
+from sstcam_simulation import Photoelectrons
 import tables
-from IPython import embed
 
 
 class PhotoelectronReader:

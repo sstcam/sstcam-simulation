@@ -1,6 +1,6 @@
 import numpy as np
 from ..camera import Camera
-from .photoelectrons import Photoelectrons
+from ..photoelectrons import Photoelectrons
 from .cherenkov import get_cherenkov_shower_image
 
 __all__ = ["PhotoelectronSource"]
@@ -45,24 +45,26 @@ class PhotoelectronSource:
         rng = np.random.default_rng(seed=self.seed)
 
         # Number of NSB photoelectrons per pixel in this event
-        length = self.camera.continuous_readout_duration
+        duration = self.camera.continuous_readout_duration
         n_pixels = self.camera.mapping.n_pixels
-        avg_photons_per_waveform = rate * 1e6 * length * 1e-9
+        avg_photons_per_waveform = rate * 1e6 * duration * 1e-9
         n_nsb_per_pixel = rng.poisson(avg_photons_per_waveform, n_pixels)
 
         # Pixel containing each photoelectron
-        nsb_pixel = np.repeat(np.arange(n_pixels), n_nsb_per_pixel)
+        pixel = np.repeat(np.arange(n_pixels), n_nsb_per_pixel)
 
         # Uniformly distribute NSB photoelectrons in time across waveform
-        n_photoelectrons = nsb_pixel.size
-        duration = self.camera.continuous_readout_duration
-        nsb_time = rng.uniform(0, duration, size=n_photoelectrons)
+        n_photoelectrons = pixel.size
+        time = rng.uniform(0, duration, size=n_photoelectrons)
 
-        # Get the charge reported by the photosensor (Inverse Transform Sampling)
-        spectrum = self.camera.photoelectron_spectrum
-        nsb_charge = rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
+        # Create initial photoelectrons
+        charge = np.ones(n_photoelectrons)
+        initial_pe = Photoelectrons(pixel=pixel, time=time, charge=charge)
 
-        return Photoelectrons(pixel=nsb_pixel, time=nsb_time, charge=nsb_charge)
+        # Process the photoelectrons through the SPE spectrum
+        pe = self.camera.photoelectron_spectrum.apply(initial_pe, rng)
+
+        return pe
 
     def get_uniform_illumination(self, time, illumination, laser_pulse_width=0):
         """
@@ -96,11 +98,14 @@ class PhotoelectronSource:
         n_photoelectrons = pixel.size
         time = rng.normal(time, laser_pulse_width, n_photoelectrons)
 
-        # Get the charge reported by the photosensor (Inverse Transform Sampling)
-        spectrum = self.camera.photoelectron_spectrum
-        charge = rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
+        # Create initial photoelectrons
+        charge = np.ones(n_photoelectrons)
+        initial_pe = Photoelectrons(pixel=pixel, time=time, charge=charge)
 
-        return Photoelectrons(pixel=pixel, time=time, charge=charge)
+        # Process the photoelectrons through the SPE spectrum
+        pe = self.camera.photoelectron_spectrum.apply(initial_pe, rng)
+
+        return pe
 
     def get_cherenkov_shower(
         self,
@@ -168,12 +173,15 @@ class PhotoelectronSource:
         # Time of arrival for each photoelectron
         time = rng.normal(np.repeat(image_time, n_pe_per_pixel), cherenkov_pulse_width)
 
-        # Get the charge reported by the photosensor (Inverse Transform Sampling)
-        spectrum = self.camera.photoelectron_spectrum
+        # Create initial photoelectrons
         n_photoelectrons = pixel.size
-        charge = rng.choice(spectrum.x, size=n_photoelectrons, p=spectrum.pdf)
+        charge = np.ones(n_photoelectrons)
+        initial_pe = Photoelectrons(pixel=pixel, time=time, charge=charge)
 
-        return Photoelectrons(pixel=pixel, time=time, charge=charge)
+        # Process the photoelectrons through the SPE spectrum
+        pe = self.camera.photoelectron_spectrum.apply(initial_pe, rng)
+
+        return pe
 
     def get_random_cherenkov_shower(self, cherenkov_pulse_width=3):
         """
@@ -212,3 +220,25 @@ class PhotoelectronSource:
             intensity=intensity,
             cherenkov_pulse_width=cherenkov_pulse_width,
         )
+
+    def resample_photoelectron_charge(self, pe: Photoelectrons) -> Photoelectrons:
+        """
+        Resample the charges of the photoelectrons from the spectrum defined in
+        the Camera
+
+        Parameters
+        ----------
+        pe : Photoelectrons
+
+        Returns
+        -------
+        Photoelectrons
+        """
+        rng = np.random.default_rng(seed=self.seed)
+        return self.camera.photoelectron_spectrum.apply(pe, rng)
+
+    def reduce_pde(self, pe: Photoelectrons) -> Photoelectrons:
+        pass
+        #TODO
+
+

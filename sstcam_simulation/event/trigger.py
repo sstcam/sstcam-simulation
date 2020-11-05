@@ -133,7 +133,7 @@ class NNSuperpixelAboveThreshold(Trigger):
         )
 
         # Convert threshold to sample units, i.e. p.e./ns
-        sample_unit_per_photoelectron = self.camera.reference_pulse.peak_height
+        sample_unit_per_photoelectron = self.camera.photoelectron_pulse.height
         threshold = self.camera.trigger_threshold * sample_unit_per_photoelectron
 
         # Discriminate superpixel readout with threshold

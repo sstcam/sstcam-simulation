@@ -11,11 +11,11 @@ def test_camera():
     Camera()
 
     # Custom Initialisation
-    reference_pulse = GaussianPulse()
+    pulse = GaussianPulse()
     spectrum = SiPMGentileSPE()
-    camera = Camera(reference_pulse=reference_pulse, photoelectron_spectrum=spectrum)
+    camera = Camera(photoelectron_pulse=pulse, photoelectron_spectrum=spectrum)
     assert camera.mapping.n_pixels == 2048
-    assert camera.reference_pulse == reference_pulse
+    assert camera.photoelectron_pulse == pulse
     assert camera.photoelectron_spectrum == spectrum
 
 

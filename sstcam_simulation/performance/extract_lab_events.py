@@ -73,7 +73,7 @@ def perform_nsb_bias_scan(camera, nsb):
             max_ = readout.max() * 5
             max_ = max_ if max_ > 0 else 1
             thresholds = np.linspace(min_, max_, n_thresholds)
-            thresholds /= camera.reference_pulse.peak_height  # Convert to p.e.
+            thresholds /= camera.photoelectron_pulse.height  # Convert to p.e.
 
         # Scan through thresholds to count triggers
         for i, thresh in enumerate(thresholds):
@@ -119,8 +119,8 @@ class ChargeExtractor:
     def __init__(self, camera, peak_index):
         self.peak_index = peak_index
 
-        ref_x = camera.reference_pulse.time
-        ref_y = camera.reference_pulse.pulse
+        ref_x = camera.photoelectron_pulse.time
+        ref_y = camera.photoelectron_pulse.amplitude
 
         # Prepare for cc
         f = interpolate.interp1d(ref_x, ref_y, kind=3)

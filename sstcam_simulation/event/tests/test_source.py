@@ -1,5 +1,6 @@
 from sstcam_simulation.camera import Camera, SSTCameraMapping
-from sstcam_simulation.event import PhotoelectronSource
+from sstcam_simulation.event import PhotoelectronSource, EventAcquisition
+from sstcam_simulation.photoelectrons import Photoelectrons
 import numpy as np
 
 
@@ -131,3 +132,31 @@ def test_seed():
     assert sim_3 != sim_4
     assert sim_4 == sim_5
     assert sim_5 != sim_6
+
+
+def test_resample_photoelectron_charge():
+    camera = Camera(
+        mapping=SSTCameraMapping(n_pixels=2),
+    )
+    pe_0 = Photoelectrons(
+        pixel=np.array([0, 1]),
+        time=np.array([30, 40]),
+        charge=np.array([1.0, 2.0]),
+        metadata=dict(test=2)
+    )
+    source = PhotoelectronSource(camera=camera, seed=1)
+    pe_1 = source.resample_photoelectron_charge(pe_0)
+    pe_2 = source.resample_photoelectron_charge(pe_0)
+    source = PhotoelectronSource(camera=camera, seed=2)
+    pe_3 = source.resample_photoelectron_charge(pe_0)
+
+    assert np.array_equal(pe_0.pixel, pe_1.pixel)
+    assert np.array_equal(pe_1.pixel, pe_2.pixel)
+    assert np.array_equal(pe_2.pixel, pe_3.pixel)
+    assert np.array_equal(pe_0.time, pe_1.time)
+    assert np.array_equal(pe_1.time, pe_2.time)
+    assert np.array_equal(pe_2.time, pe_3.time)
+    assert not np.array_equal(pe_0.charge, pe_1.charge)
+    assert np.array_equal(pe_1.charge, pe_2.charge)
+    assert not np.array_equal(pe_2.charge, pe_3.charge)
+    assert pe_0.metadata == pe_1.metadata == pe_2.metadata == pe_3.metadata
