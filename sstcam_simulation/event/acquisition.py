@@ -101,11 +101,9 @@ class EventAcquisition:
         trigger_time : ndarray
             Time of coincident rising edges between neighbouring superpixels (ns)
             Shape: (n_triggers)
-        trigger_pair : ndarray
-            The two neighbouring superpixels with coincident digital trigger readouts
-            Shape: (n_triggers, 2)
         """
-        return self.trigger(continuous_readout)
+        time, _ = self.trigger(continuous_readout)
+        return time
 
     def get_sampled_waveform(self, continuous_readout, trigger_time=None):
         """

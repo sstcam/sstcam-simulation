@@ -168,7 +168,7 @@ class NNSuperpixelAboveThreshold(Trigger):
         length = self.camera.digital_trigger_length * division
         return extend_digital_trigger(digital_trigger_line, length)
 
-    def get_backplane_trigger(self, digital_trigger_line, return_pairs=False):
+    def get_backplane_trigger(self, digital_trigger_line):
         """
         Get the triggers generated on the backplane by looking for coincidences
         in the digital trigger line from neighbouring superpixels
@@ -178,9 +178,6 @@ class NNSuperpixelAboveThreshold(Trigger):
         digital_trigger_line : ndarray
             Boolean array indicating where each superpixel line is "high" (True)
             Shape: (n_superpixels, n_continuous_readout_samples)
-        return_pairs : bool
-            In addition to the default returns, include the ndarray indicating
-            the superpixel pairs that caused the trigger
 
         Returns
         -------
@@ -188,7 +185,6 @@ class NNSuperpixelAboveThreshold(Trigger):
             Time of coincident rising edges between neighbouring superpixels (ns)
             Shape: (n_triggers)
         trigger_pair : ndarray
-            OPTIONAL (return_pairs)
             The two neighbouring superpixels with coincident digital trigger readouts
             Shape: (n_triggers, 2)
         """
@@ -212,10 +208,7 @@ class NNSuperpixelAboveThreshold(Trigger):
         trigger_pair = trigger_pair[sort]
         trigger_time = trigger_time[sort]
 
-        if return_pairs:
-            return trigger_time, trigger_pair
-        else:
-            return trigger_time
+        return trigger_time, trigger_pair
 
     @staticmethod
     def get_n_superpixel_triggers(digital_trigger_line):

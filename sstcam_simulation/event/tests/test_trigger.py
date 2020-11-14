@@ -22,7 +22,7 @@ def test_reference_pulses(trigger_class):
     time = 10
     sample = camera.get_continuous_readout_sample_from_time(time)
     continuous_readout[:, sample] = 10000
-    trigger_times = trigger(continuous_readout)
+    trigger_times, _ = trigger(continuous_readout)
     assert np.unique(trigger_times).size == 1
     assert trigger_times[0] == time
 
@@ -117,9 +117,7 @@ def test_get_backplane_trigger():
     n_samples = camera.continuous_readout_time_axis.size
     csample = camera.get_continuous_readout_sample_from_time
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
-    trigger_time, trigger_pair = trigger.get_backplane_trigger(
-        trigger_readout, return_pairs=True
-    )
+    trigger_time, trigger_pair = trigger.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (0,)
     assert trigger_pair.shape == (0, 2)
 
@@ -130,9 +128,7 @@ def test_get_backplane_trigger():
     trigger_readout[1, csample(11.5):csample(13.0)] = True
     trigger_readout[2, csample(20.0):csample(22.0)] = True
     trigger_readout[3, csample(21.5):csample(23.0)] = True
-    trigger_time, trigger_pair = trigger.get_backplane_trigger(
-        trigger_readout, return_pairs=True
-    )
+    trigger_time, trigger_pair = trigger.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (0,)
     assert trigger_pair.shape == (0, 2)
 
@@ -142,9 +138,7 @@ def test_get_backplane_trigger():
     trigger_readout[1, csample(11.5):csample(13.0)] = True
     trigger_readout[2, csample(20.0):csample(22.5)] = True
     trigger_readout[3, csample(21.5):csample(23.0)] = True
-    trigger_time, trigger_pair = trigger.get_backplane_trigger(
-        trigger_readout, return_pairs=True
-    )
+    trigger_time, trigger_pair = trigger.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (2,)
     assert trigger_pair.shape == (2, 2)
     assert np.array_equal(trigger_time, np.array([12, 22]))
@@ -158,9 +152,7 @@ def test_get_backplane_trigger():
     trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
     trigger_readout[0, 10:20] = True
     trigger_readout[0, 100:125] = True
-    trigger_time, trigger_pair = trigger.get_backplane_trigger(
-        trigger_readout, return_pairs=True
-    )
+    trigger_time, trigger_pair = trigger.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (0,)
     assert trigger_pair.shape == (0, 2)
 

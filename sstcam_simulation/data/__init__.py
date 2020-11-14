@@ -5,7 +5,7 @@ def get_data(path):
     return join(dirname(__file__), path)
 
 
-def get_cherenkov_data():
+def get_cherenkov_photoelectrons_path():
     gamma_path = get_data("cherenkov/gamma.h5")
     proton_path = get_data("cherenkov/gamma.h5")
     if not exists(gamma_path) or not exists(proton_path):
