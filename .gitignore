@@ -133,3 +133,8 @@ dmypy.json
 
 # Macos
 .DS_Store
+
+# Data
+.pkl
+.pdf
+.h5
