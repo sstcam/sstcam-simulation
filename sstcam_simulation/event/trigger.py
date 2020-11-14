@@ -132,9 +132,10 @@ class NNSuperpixelAboveThreshold(Trigger):
             continuous_readout, pixel_to_superpixel, n_superpixels
         )
 
-        # Convert threshold to sample units, i.e. p.e./ns
-        sample_unit_per_photoelectron = self.camera.photoelectron_pulse.height
-        threshold = self.camera.trigger_threshold * sample_unit_per_photoelectron
+        # Convert threshold from photoelectrons to waveform sample units
+        pulse_height = self.camera.photoelectron_pulse.height
+        spectrum_average = self.camera.photoelectron_spectrum.average
+        threshold = self.camera.trigger_threshold * pulse_height * spectrum_average
 
         # Discriminate superpixel readout with threshold
         above_threshold = superpixel_sum >= threshold

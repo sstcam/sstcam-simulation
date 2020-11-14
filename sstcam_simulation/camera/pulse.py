@@ -26,7 +26,7 @@ class PhotoelectronPulse(metaclass=ABCMeta):
         ----------
         duration : int
             Duration of the reference pulse in nanoseconds
-        mv_per_pe : float
+        mv_per_pe : float or None
             Height of a 1 photoelectron pulse in mV. If this is set, then the
             units of the waveform samples can be globally considered as mV
             instead of photoelectrons/sample.
@@ -123,7 +123,7 @@ class GenericPulse(PhotoelectronPulse):
             Time (ns) axis for the reference pulse
         value : ndarray
             Values of the reference pulse corresponding to the time array
-        mv_per_pe : float
+        mv_per_pe : float or None
             Height of a 1 photoelectron pulse in mV. If this is set, then the
             units of the waveform samples can be globally considered as mV
             instead of photoelectrons/sample.
@@ -152,7 +152,7 @@ class GaussianPulse(PhotoelectronPulse):
             Standard deviation of pulse (ns)
         duration : int
             Length of the reference pulse in nanoseconds
-        mv_per_pe : float
+        mv_per_pe : float or None
             Height of a 1 photoelectron pulse in mV. If this is set, then the
             units of the waveform samples can be globally considered as mV
             instead of photoelectrons/sample.

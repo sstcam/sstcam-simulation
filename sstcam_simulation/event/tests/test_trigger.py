@@ -2,6 +2,9 @@ from sstcam_simulation.event.trigger import (
     sum_superpixels, extend_digital_trigger, Trigger, NNSuperpixelAboveThreshold
 )
 from sstcam_simulation.camera import Camera, SSTCameraMapping
+from sstcam_simulation.camera.spe import SiPMGentileSPE
+from sstcam_simulation.camera.pulse import GaussianPulse
+from sstcam_simulation import Photoelectrons, EventAcquisition
 import numpy as np
 import pytest
 
@@ -160,3 +163,37 @@ def test_get_backplane_trigger():
     )
     assert trigger_time.shape == (0,)
     assert trigger_pair.shape == (0, 2)
+
+
+def test_trigger_threshold_units():
+    def get_n_triggers_for_threshold(mv_per_pe, normalise_charge, trigger_threshold):
+        camera = Camera(
+            mapping=SSTCameraMapping(n_pixels=1),
+            continuous_readout_duration=128,
+            photoelectron_pulse=GaussianPulse(mv_per_pe=mv_per_pe),
+            photoelectron_spectrum=SiPMGentileSPE(normalise_charge=normalise_charge),
+            trigger_threshold=trigger_threshold
+        )
+        avg = camera.photoelectron_spectrum.average
+        pe = Photoelectrons(np.array([0]), np.array([20]), np.array([avg]))
+        acquisition = EventAcquisition(camera=camera)
+        trigger = acquisition.trigger
+        readout = acquisition.get_continuous_readout(pe)
+        digital_trigger = trigger.get_superpixel_digital_trigger_line(readout)
+        return trigger.get_n_superpixel_triggers(digital_trigger)
+    n_triggers = get_n_triggers_for_threshold(None, True, 0.9)
+    assert n_triggers == 1
+    n_triggers = get_n_triggers_for_threshold(None, True, 1.1)
+    assert n_triggers == 0
+    n_triggers = get_n_triggers_for_threshold(None, False, 0.9)
+    assert n_triggers == 1
+    n_triggers = get_n_triggers_for_threshold(None, False, 1.1)
+    assert n_triggers == 0
+    n_triggers = get_n_triggers_for_threshold(4, True, 0.9)
+    assert n_triggers == 1
+    n_triggers = get_n_triggers_for_threshold(4, True, 1.1)
+    assert n_triggers == 0
+    n_triggers = get_n_triggers_for_threshold(4, False, 0.9)
+    assert n_triggers == 1
+    n_triggers = get_n_triggers_for_threshold(4, False, 1.1)
+    assert n_triggers == 0
