@@ -135,6 +135,6 @@ dmypy.json
 .DS_Store
 
 # Data
-.pkl
-.pdf
-.h5
+*.pkl
+*.pdf
+*.h5
