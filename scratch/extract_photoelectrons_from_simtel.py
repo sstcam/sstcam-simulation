@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 class EventTable(tables.IsDescription):
     event_index = tables.UInt64Col()
+    event_id = tables.UInt64Col()
     telescope_id = tables.UInt8Col()
     n_photoelectrons = tables.UInt64Col()
     energy = tables.Float64Col()
@@ -38,7 +39,7 @@ def main():
         help='number of telescope events to store'
     )
     parser.add_argument(
-        '-T', dest='only_tiggered_events', action='store_true',
+        '-T', dest='only_triggered_events', action='store_true',
         help='store only event that produced a telescope trigger in simtelarray'
     )
     args = parser.parse_args()
