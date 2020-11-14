@@ -20,6 +20,9 @@ class PhotoelectronReader:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+    def __len__(self):
+        return self._file.root.data.event_metadata.attrs.NROWS
+
     def close(self):
         self._file.close()
 

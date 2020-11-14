@@ -33,6 +33,7 @@ def test_photoelectron_reader(tmp_path):
 
     reader = PhotoelectronReader(path)
     assert reader._file.isopen
+    assert len(reader) == 2
     reader.close()
     assert not reader._file.isopen
 
