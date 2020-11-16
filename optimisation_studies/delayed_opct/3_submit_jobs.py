@@ -22,7 +22,7 @@ def main():
     script_path = join(DIR, "2_define_job.py")
     python_cmd = "python {} -i {} --nsb 100 --trigger 600\n"
     if use_50pe_ref:
-        python_cmd.replace("\n", " --50peref\n")
+        python_cmd = "python {} -i {} --nsb 100 --trigger 600 --50peref\n"
     correct_permissions = "getfacl -d . | setfacl --set-file=- {}\n"
 
     for camera_path in camera_paths:
@@ -42,7 +42,7 @@ def main():
             file.write("fi\n")
         call("chmod +x {}".format(shell_path), shell=True)
 
-        qsub_cmd = "qsub -cwd -V -q lfc.q {}".format(shell_path)
+        qsub_cmd = "qsub -cwd -V -q -j lfc.q {}".format(shell_path)
         print(qsub_cmd)
         if not dry:
             call(qsub_cmd, shell=True)

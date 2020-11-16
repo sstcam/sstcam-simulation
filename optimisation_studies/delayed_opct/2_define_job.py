@@ -167,11 +167,10 @@ def main():
             measured_opct=measured_opct,
             measured_opct_err=measured_opct_err,
         )
-        # illuminations = np.geomspace(0.1, 1000, 100)
-        illuminations = np.geomspace(0.1, 1000, 10)
+        illuminations = np.geomspace(0.1, 1000, 100)
         for illumination in tqdm(illuminations):
             generator.set_illumination(illumination)
-            n_events = 2#2000 if illumination <= 30 else 100
+            n_events = 2000 if illumination <= 30 else 100
             for _ in range(n_events):
                 writer.append(generator.generate_event())
 
