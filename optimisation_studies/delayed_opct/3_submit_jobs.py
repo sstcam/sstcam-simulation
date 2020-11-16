@@ -20,7 +20,7 @@ def main():
     dry = args.dry
 
     script_path = join(DIR, "2_define_job.py")
-    python_cmd = "python {} -i {} --nsb 100 -trigger 600\n"
+    python_cmd = "python {} -i {} --nsb 100 --trigger 600\n"
     if use_50pe_ref:
         python_cmd.replace("\n", " --50peref\n")
     correct_permissions = "getfacl -d . | setfacl --set-file=- {}\n"
@@ -34,6 +34,7 @@ def main():
             file.write("source activate cta\n")
             file.write("export NUMBA_NUM_THREADS=6\n")
             file.write(f"cd {DIR}\n")
+            file.write("pwd\n")
             file.write(python_cmd.format(script_path, camera_path))
             file.write(correct_permissions.format(h5_path))
             file.write(f"if [ -f {h5_path} ]; then\n")
