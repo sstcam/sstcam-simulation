@@ -34,6 +34,9 @@ class Coupling(metaclass=ABCMeta):
             Shape: (n_pixels, n_continuous_readout_samples)
         """
 
+    def update_nsb_rate(self, nsb_rate):
+        pass
+
 
 class NoCoupling(Coupling):
     """
