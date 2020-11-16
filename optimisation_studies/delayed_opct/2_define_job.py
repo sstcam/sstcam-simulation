@@ -140,6 +140,9 @@ def main():
     print(f"Loading camera: {camera_definition_path}")
     camera = Camera.load(camera_definition_path)
 
+    # Simulate just 1 superpixel
+    camera.mapping.reinitialise(4)
+
     if use_50pe_ref:
         ref_x, ref_y = measure_50pe_pulse(camera)
         extractor = ChargeExtractor(ref_x, ref_y, camera.mapping)
