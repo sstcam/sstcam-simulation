@@ -60,7 +60,7 @@ def main():
             spe = SiPMDelayed(opct=opct, time_constant=time_constant, normalise_charge=False)
             coupling = ACOffsetCoupling(pulse_area=pulse.area, spectrum_average=spe.average)
             camera = Camera(**camera_kwargs, photoelectron_spectrum=spe, coupling=coupling)
-            name = f"opct{opct:.1f}_tc{time_constant:.0f}.pkl"
+            name = f"opct{opct:.2f}_tc{time_constant:.0f}.pkl"
             camera.save(join(output_dir, name))
 
 
