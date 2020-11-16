@@ -42,7 +42,7 @@ def main():
             file.write("fi\n")
         call("chmod +x {}".format(shell_path), shell=True)
 
-        qsub_cmd = "qsub -cwd -V -q -j lfc.q {}".format(shell_path)
+        qsub_cmd = "qsub -cwd -V -q lfc.q {}".format(shell_path)
         print(qsub_cmd)
         if not dry:
             call(qsub_cmd, shell=True)
