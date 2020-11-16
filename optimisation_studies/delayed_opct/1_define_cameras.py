@@ -53,8 +53,8 @@ def main():
 
     # print(width_pos, width_neg)
 
-    time_constant_list = [0, 5, 20, 100, 1000]
-    opct_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+    time_constant_list = [0, 5, 10, 20, 50, 100, 200, 1000]
+    opct_list = np.linspace(0.01, 0.99, 50)
     for time_constant in time_constant_list:
         for opct in opct_list:
             spe = SiPMDelayed(opct=opct, time_constant=time_constant, normalise_charge=False)
