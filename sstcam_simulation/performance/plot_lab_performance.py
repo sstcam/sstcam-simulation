@@ -7,6 +7,9 @@ from CHECLabPy.utils.resolutions import ChargeResolution
 
 
 def extract_trigger_efficiency(illumination, n_triggers):
+    n_events, n_superpixels = n_triggers.shape
+    illumination = np.repeat(illumination, n_superpixels)
+    n_triggers = n_triggers.ravel()
     df = pd.DataFrame(dict(illumination=illumination, n_triggers=n_triggers))
     df['triggered'] = df['n_triggers'] > 0
     trigger_eff = df.groupby('illumination').agg(['mean', 'std', 'count'])
