@@ -24,7 +24,7 @@ setup(
         'h5py',
         'PyYAML',
         'eventio>=1.4.1',
-        'ctapipe~=0.9',
+        'ctapipe~=0.9.0',
         'CHECLabPy @ git+https://github.com/sstcam/CHECLabPy@master',
     ],
     setup_requires=['pytest-runner', ],
