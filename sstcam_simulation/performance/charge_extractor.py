@@ -36,7 +36,6 @@ class ChargeExtractor:
     def extract(self, waveforms, peak_index):
         cc = correlate1d(waveforms, self.cc_ref_y, mode='constant', origin=self.origin)
         charge = cc[:, peak_index]
-        charge = waveforms[:, peak_index-10:peak_index+10].sum(1)
         return charge
 
     def obtain_peak_index_from_neighbours(self, waveforms):
