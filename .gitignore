@@ -139,3 +139,4 @@ dmypy.json
 *.pdf
 *.h5
 **/data/*.sh
+src

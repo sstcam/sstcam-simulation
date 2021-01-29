@@ -25,6 +25,17 @@ def test_optical_crosstalk_probability():
     assert optical_crosstalk_probability(0, 0.3) == 0
 
 
+@pytest.mark.parametrize("opct", [0.1, 0.3, 0.5, 0.7, 0.9])
+def test_optical_crosstalk_probability_enf(opct):
+    i = np.arange(1, 250)
+    p = optical_crosstalk_probability(i, opct)
+    avg = np.average(i, weights=p)
+    var = np.average((i - avg) ** 2, weights=p)
+    np.testing.assert_allclose(avg, 1/(1-opct))
+    np.testing.assert_allclose(var, 1/(1/opct - 2 + opct))
+    np.testing.assert_allclose(1 + var/avg**2, 1+opct)
+
+
 def test_sipm_gentile():
     x = np.linspace(0, 10, 10000)
     pdf = sipm_gentile_spe(x, 0.2, 0.3)
@@ -53,21 +64,19 @@ def _get_result_photoelectrons(spectrum, rng):
 
 
 @pytest.mark.parametrize("spectrum_class", non_abstract_children(SPESpectrum))
-def test_spe_spectra(spectrum_class):
+@pytest.mark.parametrize("normalise_charge", [True, False])
+def test_spe_spectra(spectrum_class, normalise_charge):
     rng = np.random.RandomState(seed=3)
 
-    spectrum = spectrum_class(normalise_charge=True)
-    pe, charge = _get_result_photoelectrons(spectrum, rng)
-    np.testing.assert_allclose(spectrum.average, 1, rtol=2e-2)
-    np.testing.assert_allclose(pe.mean(), 1, rtol=2e-2)
-    np.testing.assert_allclose(charge.mean(), 1, rtol=2e-2)
-    # np.testing.assert_allclose(1+charge.std()**2, spectrum.excess_noise_factor, rtol=1e-2)
-
-    spectrum = spectrum_class(normalise_charge=False)
+    spectrum = spectrum_class(normalise_charge=normalise_charge)
     pe, charge = _get_result_photoelectrons(spectrum, rng)
     np.testing.assert_allclose(pe.mean(), 1, rtol=2e-2)
     np.testing.assert_allclose(charge.mean(), spectrum.average, rtol=2e-2)
-    # np.testing.assert_allclose(1+charge.std()**2, spectrum.excess_noise_factor, rtol=1e-2)
+    enf = 1 + charge.std()**2 / charge.mean()**2
+    np.testing.assert_allclose(enf, spectrum.excess_noise_factor, rtol=1e-1)
+
+    if normalise_charge:
+        np.testing.assert_allclose(spectrum.average, 1, rtol=2e-2)
 
 
 def test_delayed():

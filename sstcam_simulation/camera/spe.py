@@ -279,9 +279,8 @@ class SPESpectrumTemplate(SPESpectrum):
 
     @property
     def excess_noise_factor(self):
-        #TODO
         variance = np.average((self.x - self.average) ** 2, weights=self.pdf)
-        return 1 + variance
+        return 1 + variance / self.average**2
 
 
 class SiPMGentileSPE(SPESpectrumTemplate):
@@ -344,7 +343,6 @@ class SiPMPrompt(SPESpectrum):
 
     @property
     def excess_noise_factor(self):
-        #TODO
         return 1 + self.opct
 
 
@@ -388,5 +386,4 @@ class SiPMDelayed(SPESpectrum):
 
     @property
     def excess_noise_factor(self):
-        #TODO
         return 1 + self.opct
