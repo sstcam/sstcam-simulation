@@ -65,6 +65,16 @@ class Photoelectrons:
             & (self.metadata == other.metadata)
         )
 
+    def get_time_slice(self, start, stop):
+        within = (self.time > start) & (self.time < stop)
+        return Photoelectrons(
+            pixel=self.pixel[within],
+            time=self.time[within],
+            charge=self.charge[within],
+            initial=self.initial[within],
+            metadata=self.metadata
+        )
+
     def get_photoelectrons_per_pixel(self, n_pixels):
         """Integer count of photoelectrons in each photosensor pixel"""
         pixel_photoelectrons = np.zeros(n_pixels, dtype=np.int)
