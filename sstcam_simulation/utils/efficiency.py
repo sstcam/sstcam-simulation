@@ -1,4 +1,5 @@
 from sstcam_simulation.data import get_data
+from os.path import exists
 import numpy as np
 import pandas as pd
 from numba import njit
@@ -26,6 +27,21 @@ def _integrate(wavelength, nsb_diff_flux, wavelength_min, wavelength_max):
 
 class CameraEfficiency:
     def __init__(self, path=get_data("datasheet/p4eff_ASTRI-CHEC.lis")):
+        """
+        Calculate parameters related to the camera efficiency
+
+        Formulae and data obtained from the excel files at:
+        https://www.mpi-hd.mpg.de/hfm/CTA/MC/Prod4/Config/Efficiencies
+        Credit: Konrad Bernloehr
+
+        Parameters
+        ----------
+        path : str
+            Path to the efficiency file from the website - needs to be downloaded first
+        """
+        if not exists(path):
+            raise ValueError(f"No file found at {path}, have you downloaded the file?")
+
         columns = [
             "wavelength",
             "eff",
