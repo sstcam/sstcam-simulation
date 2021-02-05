@@ -23,6 +23,7 @@ setup(
         'numba',
         'h5py',
         'PyYAML',
+        'requests',
         'eventio>=1.4.1',
         'ctapipe~=0.9.0',
         'CHECLabPy @ git+https://github.com/sstcam/CHECLabPy@master',

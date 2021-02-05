@@ -37,6 +37,7 @@ jobs:
         shell: bash -l {0}
         run: |
           python setup.py develop
+          python sstcam_simulation/data/__init__.py
       - name: Test
         shell: bash -l {0}
         run: |
