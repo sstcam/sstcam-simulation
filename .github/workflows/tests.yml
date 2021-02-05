@@ -35,6 +35,9 @@ jobs:
           conda list
       - name: Install
         shell: bash -l {0}
+        env:
+          KONRAD_USERNAME: ${{ secrets.KONRAD_USERNAME }}
+          KONRAD_PASSWORD: ${{ secrets.KONRAD_PASSWORD }}
         run: |
           python setup.py develop
           python sstcam_simulation/data/__init__.py
