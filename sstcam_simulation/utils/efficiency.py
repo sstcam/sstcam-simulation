@@ -72,6 +72,7 @@ class CameraEfficiency:
         self.mirror_reflectivity = self._df['ref.'].values
         self.window_transmissivity = self._df['filter'].values
         self.pde = self._df['q.e.'].values
+        self.cherenkov_scale = 1
 
         self.mirror_area = u.Quantity(7.931, 'm2')
         self.pixel_diameter = u.Quantity(0.0062, 'm')
@@ -157,7 +158,7 @@ class CameraEfficiency:
     @property
     def _cherenkov_diff_flux_on_ground(self):
         ref_wavelength = u.Quantity(400, u.nm)
-        return (ref_wavelength / self.wavelength)**2 * self._atmospheric_transmissivity
+        return (ref_wavelength / self.wavelength)**2 * self._atmospheric_transmissivity * self.cherenkov_scale
 
     @property
     def _cherenkov_diff_flux_at_camera(self):
