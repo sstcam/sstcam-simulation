@@ -142,7 +142,7 @@ class NNSuperpixelAboveThreshold(Trigger):
 
         # Only consider times when threshold is crossed
         prepend = 1 if above_threshold.all() else 0
-        crossings = np.diff(above_threshold.astype(np.int), prepend=prepend) == 1
+        crossings = np.diff(above_threshold.astype(int), prepend=prepend) == 1
 
         return crossings
 
@@ -198,7 +198,7 @@ class NNSuperpixelAboveThreshold(Trigger):
 
         # Extract the rising edge time for the coincident superpixels
         trigger_where = np.where(
-            np.diff(neighbour_coincidence.astype(np.int), axis=1) == 1
+            np.diff(neighbour_coincidence.astype(int), axis=1) == 1
         )
         trigger_pair = neighbours[trigger_where[0]]
         trigger_time = trigger_where[1] + 1  # Plus 1 because of np.diff
@@ -227,4 +227,4 @@ class NNSuperpixelAboveThreshold(Trigger):
         ndarray
             Number of triggers in the digital signal readout per superpixel
         """
-        return np.sum(np.diff(digital_trigger_line.astype(np.int)) == 1, axis=1)
+        return np.sum(np.diff(digital_trigger_line.astype(int)) == 1, axis=1)

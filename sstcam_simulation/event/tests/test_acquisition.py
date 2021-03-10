@@ -49,7 +49,7 @@ def test_get_continuous_readout_with_noise():
     )
     acquisition = EventAcquisition(camera=camera, seed=1)
     photoelectrons = Photoelectrons(
-        pixel=np.array([], dtype=np.int), time=np.array([]), charge=np.array([])
+        pixel=np.array([], dtype=int), time=np.array([]), charge=np.array([])
     )
     readout = acquisition.get_continuous_readout(photoelectrons)
     stddev_pe = readout.std() / camera.photoelectron_pulse.height

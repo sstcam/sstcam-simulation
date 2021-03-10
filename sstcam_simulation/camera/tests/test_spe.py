@@ -52,7 +52,7 @@ def _get_result_photoelectrons(spectrum, rng):
     for iev in range(n_events):
         n_photoelectrons = 1
         photoelectrons = Photoelectrons(
-            pixel=np.zeros(n_photoelectrons, dtype=np.int),
+            pixel=np.zeros(n_photoelectrons, dtype=int),
             time=np.zeros(n_photoelectrons),
             charge=np.ones(n_photoelectrons),
             metadata=dict(test="test"),
@@ -82,7 +82,7 @@ def test_spe_spectra(spectrum_class, normalise_charge):
 def test_delayed():
     n_photoelectrons = 1000000
     photoelectrons = Photoelectrons(
-        pixel=np.zeros(n_photoelectrons, dtype=np.int),
+        pixel=np.zeros(n_photoelectrons, dtype=int),
         time=np.full(n_photoelectrons, 10.),
         charge=np.ones(n_photoelectrons),
     )

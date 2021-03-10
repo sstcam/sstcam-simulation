@@ -29,8 +29,8 @@ def get_pixel_remap(pixel_x, pixel_y, coordinates):
     n_rows = row.max() + 1
     n_columns = col.max() + 1
     n_pixels = pixel_x.size
-    camera_2d = np.zeros((n_rows, n_columns), dtype=np.int)
-    camera_2d[coordinates.row, coordinates.column] = np.arange(n_pixels, dtype=np.int)
+    camera_2d = np.zeros((n_rows, n_columns), dtype=int)
+    camera_2d[coordinates.row, coordinates.column] = np.arange(n_pixels, dtype=int)
     return camera_2d[row, col]
 
 

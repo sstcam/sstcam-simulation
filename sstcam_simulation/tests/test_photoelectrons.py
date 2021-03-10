@@ -3,13 +3,13 @@ import numpy as np
 
 
 def test_photoelectrons():
-    pixel = np.array([0], dtype=np.int)
+    pixel = np.array([0], dtype=int)
     time = np.array([30])
     charge = np.array([2])
     meta1 = dict(test1=2, test3=1)
     photoelectrons_1 = Photoelectrons(pixel, time, charge, metadata=meta1)
 
-    pixel = np.array([1], dtype=np.int)
+    pixel = np.array([1], dtype=int)
     time = np.array([35])
     charge = np.array([5])
     initial = np.array([False])
@@ -85,4 +85,4 @@ def test_empty():
     assert photoelectrons.time.size == 0
     assert photoelectrons.charge.size == 0
     assert photoelectrons.initial.size == 0
-    assert photoelectrons.pixel.dtype == np.int
+    assert photoelectrons.pixel.dtype == int
