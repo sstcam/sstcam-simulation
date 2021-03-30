@@ -93,28 +93,14 @@ class PhotoelectronSource:
 
         if illumination_err > 0:
             # ? Pessimistic - plots in nextcloud have a 20 % scatter but 1 std dev is shown as half that on the plots
-            illumination = rng.normal(illumination , illumination*illumination_err)
+            illumination = rng.normal(illumination, illumination*illumination_err)
 
-        n_pixels = self.camera.mapping.n_pixels
-        n_pe_per_pixel = rng.poisson(illumination, n_pixels)
-
-        # Pixel containing each photoelectron
-        pixel = np.repeat(np.arange(n_pixels), n_pe_per_pixel)
-
-        # Time of arrival for each photoelectron
-        n_photoelectrons = pixel.size
-        time = rng.normal(time, flasher_pulse_width+(flasher_pulse_width*pulse_width_err), n_photoelectrons)
-
-        # Create initial photoelectrons
-        charge = np.ones(n_photoelectrons)
-        initial_pe = Photoelectrons(pixel=pixel, time=time, charge=charge)
-
-        # Process the photoelectrons through the SPE spectrum
-        pe = self.camera.photoelectron_spectrum.apply(initial_pe, rng)
+        pe = self.get_uniform_illumination(time, illumination,
+                                           laser_pulse_width=flasher_pulse_width, pulse_width_err=pulse_width_err)
 
         return pe
 
-    def get_uniform_illumination(self, time, illumination, laser_pulse_width=0):
+    def get_uniform_illumination(self, time, illumination, laser_pulse_width=0, pulse_width_err=0):
         """
         Simulate the camera being illuminated by a uniform light (which already
         accounts for the focal plane curvature).
@@ -127,6 +113,7 @@ class PhotoelectronSource:
             Average illumination in number of photoelectrons
         laser_pulse_width : float
             Width of the pulse from the illumination source
+        pulse_width_err : float Percentage error , typically 3.5 %, pass as decimal 0.035
 
         Returns
         -------
@@ -144,7 +131,7 @@ class PhotoelectronSource:
 
         # Time of arrival for each photoelectron
         n_photoelectrons = pixel.size
-        time = rng.normal(time, laser_pulse_width, n_photoelectrons)
+        time = rng.normal(time, laser_pulse_width + (laser_pulse_width * pulse_width_err), n_photoelectrons)
 
         # Create initial photoelectrons
         charge = np.ones(n_photoelectrons)
