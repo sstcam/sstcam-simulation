@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 import numpy as np
 from numba import njit, vectorize, float64, int64
 from sstcam_simulation import Photoelectrons
+from scipy.spatial import cKDTree as KDTree
+from scipy.stats import norm
 
 __all__ = [
     "single_gaussian",
@@ -374,6 +376,74 @@ class SiPMDelayed(SPESpectrum):
         pe_opct.time += rng.exponential(self.time_constant, size=pe_opct.time.size)
         pe_total = photoelectrons + pe_opct
 
+        # Fluctuate the charge
+        pe_total.charge = rng.normal(1, self.spe_sigma, pe_total.charge.size)
+        if self.normalise_charge:
+            pe_total.charge /= self._scale
+
+        return pe_total
+
+    @property
+    def average(self):
+        return 1 if self.normalise_charge else self._scale
+
+    @property
+    def excess_noise_factor(self):
+        return 1 + self.opct
+
+
+class SiPMReflectedOCT(SPESpectrum):
+    def __init__(self, spe_sigma=0.1, opct=0.2, reflected_opct=0.2,
+                 reflected_scale=0.5, mapping=None, **kwargs):
+        if mapping is None:
+            raise ValueError("Need to specify pixel mapping")
+
+        self.mapping = mapping
+
+        # Generate PDF for reflection to neighbouring pixels
+        pix = np.arange(-48, 49)
+        X, Y = np.meshgrid(pix, pix)
+        self.neighbour_col = X.ravel()
+        self.neighbour_row = Y.ravel()
+        centre = np.where((self.neighbour_col==0) & (self.neighbour_row==0))[0][0]
+        kd = KDTree(np.column_stack([self.neighbour_col, self.neighbour_row]))
+        neighbour_distance, self.neighbour_index = kd.query(kd.data[centre], X.size)
+        self.neighbour_pdf = norm.pdf(neighbour_distance, loc=0, scale=reflected_scale)
+        self.neighbour_pdf /= self.neighbour_pdf.sum()  # Normalise
+
+        self.spe_sigma = spe_sigma
+        self.opct = opct
+        self.reflected_opct = reflected_opct
+        self.reflected_scale = reflected_scale
+        self._ipe = np.arange(1, 250)
+        self._p_self = optical_crosstalk_probability(self._ipe, opct)
+        self._p_refl = optical_crosstalk_probability(self._ipe, reflected_opct)
+        self._scale = 1/(1-self.opct)
+        super().__init__(**kwargs)
+
+    def apply(self, pe_initial, rng):
+        pe_opct_self = _generate_opct_pe(pe_initial, rng, self._ipe, self._p_self)
+        pe_total_self = pe_initial + pe_opct_self
+
+        # Additional OCT probability for reflected
+        pe_opct_nei = _generate_opct_pe(pe_total_self, rng, self._ipe, self._p_refl)
+        # Spread across neighbouring pixels
+        neighbour_index = rng.choice(
+            self.neighbour_index, p=self.neighbour_pdf, size=len(pe_opct_nei)
+        )
+        pixel, inside_camera = self.mapping.shift_pixel(
+            pe_opct_nei.pixel,
+            self.neighbour_row[neighbour_index],
+            self.neighbour_col[neighbour_index]
+        )
+        pe_opct_nei = Photoelectrons(
+            pixel=pixel,
+            time=pe_opct_nei.time[inside_camera],
+            charge=pe_opct_nei.charge[inside_camera],
+            initial=pe_opct_nei.initial[inside_camera]
+        )
+
+        pe_total = pe_total_self + pe_opct_nei
         # Fluctuate the charge
         pe_total.charge = rng.normal(1, self.spe_sigma, pe_total.charge.size)
         if self.normalise_charge:
