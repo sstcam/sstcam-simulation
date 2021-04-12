@@ -51,12 +51,20 @@ def main():
         n_events=args.n_events,
     )
 
-    with PhotoelectronWriter(output_path, EventTable) as output:
-        for path in tqdm(path_list, desc="Processing simtel files"):
-            reader = SimtelReader(path, **kwargs)
+    for path in tqdm(path_list, desc="Processing simtel files"):
+        output_path = path.replace(".simtel.gz", "_pe.h5")
+        reader = SimtelReader(path, **kwargs)
+        with PhotoelectronWriter(output_path, EventTable) as output:
             for pe in reader:
                 output.append(pe)
-            output.flush()
+
+
+    # with PhotoelectronWriter(output_path, EventTable) as output:
+    #     for path in tqdm(path_list, desc="Processing simtel files"):
+    #         reader = SimtelReader(path, **kwargs)
+    #         for pe in reader:
+    #             output.append(pe)
+    #         output.flush()
 
 
 if __name__ == '__main__':
