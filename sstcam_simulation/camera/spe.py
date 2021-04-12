@@ -59,6 +59,7 @@ def single_gaussian(x, spe_sigma):
 
 @vectorize([float64(int64, float64)], fastmath=True)
 def optical_crosstalk_probability(k, opct):
+    #TODO: rename - not opct probability here
     """
     Calculate the probability for k microcells to be fired following the
     generation of 1 photoelectron in the SiPM pixel
@@ -117,7 +118,7 @@ def _generate_opct_pe(photoelectrons, rng, ipe, probability):
     time = np.repeat(photoelectrons.time, n_repeat)
     pixel = np.repeat(photoelectrons.pixel, n_repeat)
     charge = np.ones(n_new)
-    initial = ~np.repeat(photoelectrons.initial, n_repeat)
+    initial = np.zeros(n_new, dtype=bool)
     return Photoelectrons(pixel=pixel, time=time, charge=charge, initial=initial)
 
 
