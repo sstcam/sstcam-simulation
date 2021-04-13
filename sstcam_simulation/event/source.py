@@ -66,7 +66,41 @@ class PhotoelectronSource:
 
         return pe
 
-    def get_uniform_illumination(self, time, illumination, laser_pulse_width=0):
+    def get_flasher_illumination(self,  time, illumination, flasher_pulse_width, illumination_err=0, pulse_width_err=0):
+        """        Simulate the camera being illuminated by a flasher  (which already
+        accounts for the focal plane curvature).
+
+        Parameters
+        ----------
+        time : float
+            Arrival time of the light at the focal plane
+        illumination : float
+            Average illumination in number of photoelectrons, typically 0.1 to 1000
+        flasher_pulse_width : float
+            Width of the pulse from the illumination source in nanoseconds, typically 4.5 ns
+        illumination_err : float
+            Percentage error, typically 20 %, pass as decimal 0.2
+        pulse_width_err : float
+            Percentage error , typically 3.5 %, pass as decimal 0.035
+
+        Returns
+        -------
+        Photoelectrons
+            Container for the photoelectron arrays
+        """
+
+        rng = np.random.default_rng(seed=self.seed)
+
+        if illumination_err > 0:
+            # ? Pessimistic - plots in nextcloud have a 20 % scatter but 1 std dev is shown as half that on the plots
+            illumination = rng.normal(illumination, illumination*illumination_err)
+
+        pe = self.get_uniform_illumination(time, illumination,
+                                           laser_pulse_width=flasher_pulse_width, pulse_width_err=pulse_width_err)
+
+        return pe
+
+    def get_uniform_illumination(self, time, illumination, laser_pulse_width=0, pulse_width_err=0):
         """
         Simulate the camera being illuminated by a uniform light (which already
         accounts for the focal plane curvature).
@@ -79,6 +113,7 @@ class PhotoelectronSource:
             Average illumination in number of photoelectrons
         laser_pulse_width : float
             Width of the pulse from the illumination source
+        pulse_width_err : float Percentage error , typically 3.5 %, pass as decimal 0.035
 
         Returns
         -------
@@ -96,7 +131,7 @@ class PhotoelectronSource:
 
         # Time of arrival for each photoelectron
         n_photoelectrons = pixel.size
-        time = rng.normal(time, laser_pulse_width, n_photoelectrons)
+        time = rng.normal(time, laser_pulse_width + (laser_pulse_width * pulse_width_err), n_photoelectrons)
 
         # Create initial photoelectrons
         charge = np.ones(n_photoelectrons)
