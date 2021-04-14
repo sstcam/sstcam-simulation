@@ -66,6 +66,8 @@ def main():
             trigger_rate=trigger_rate,
             trigger_threshold=threshold,
             pedestal=pedestal,
+            pulse_area=camera.photoelectron_pulse.area,
+            spectrum_average=camera.photoelectron_spectrum.average,
         )
         for event in tqdm(generator, total=len(generator.reader)):
             writer.append(event)
