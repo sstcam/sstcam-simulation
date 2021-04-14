@@ -28,7 +28,7 @@ def main():
 
             with open(shell_path, 'w') as file:
                 file.write("source $HOME/.bash_profile\n")
-                file.write("source activate sstcam\n")
+                file.write("source activate cta\n")
                 file.write("export NUMBA_NUM_THREADS=6\n")
                 file.write(f"cd {DIR}\n")
                 file.write("pwd\n")
