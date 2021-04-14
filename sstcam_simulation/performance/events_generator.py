@@ -73,10 +73,6 @@ class CherenkovShowerGenerator:
         self.pedestal = pedestal
         self.nsb_rate = nsb_rate
 
-        pulse_area = self.camera.photoelectron_pulse.area
-        spectrum_average = self.camera.photoelectron_spectrum.average
-        pe_conversion = pulse_area * spectrum_average
-        self.pe_conversion = pe_conversion
         self.n_pixels = self.camera.mapping.n_pixels
 
         self.reader = PhotoelectronReader(self.path)
@@ -91,7 +87,9 @@ class CherenkovShowerGenerator:
     def event_table_layout(self):
         class EventTable(tables.IsDescription):
             n_triggers = tables.Int64Col(shape=1)
-            true_charge = tables.Int64Col(shape=self.n_pixels)
+            signal_pe = tables.Int64Col(shape=self.n_pixels)
+            signal_charge = tables.Float64Col(shape=self.n_pixels)
+            peak_index = tables.Int64Col(shape=self.n_pixels)
             measured_charge = tables.Float64Col(shape=self.n_pixels)
 
             # Event metadata
@@ -113,7 +111,8 @@ class CherenkovShowerGenerator:
         for cherenkov_pe in self.reader:
             nsb_pe = self.source.get_nsb(self.nsb_rate)
             signal_pe = self.source.resample_photoelectron_charge(cherenkov_pe)
-            true_charge = signal_pe.get_photoelectrons_per_pixel(self.n_pixels)
+            signal_pe_per_pixel = signal_pe.get_photoelectrons_per_pixel(self.n_pixels)
+            signal_charge_per_pixel = signal_pe.get_charge_per_pixel(self.n_pixels)
             readout = self.acquisition.get_continuous_readout(nsb_pe + signal_pe)
 
             n_triggers = self.acquisition.get_trigger(readout).size
@@ -121,11 +120,12 @@ class CherenkovShowerGenerator:
             waveform = self.acquisition.get_sampled_waveform(readout)
             peak_index = self.extractor.obtain_peak_index_from_neighbours(waveform)
             measured_charge = self.extractor.extract(waveform, peak_index)
-            calibrated_charge = (measured_charge - self.pedestal) / self.pe_conversion
 
             yield dict(
                 n_triggers=n_triggers,
-                true_charge=true_charge,
-                measured_charge=calibrated_charge,
+                signal_pe=signal_pe_per_pixel,
+                signal_charge=signal_charge_per_pixel,
+                peak_index=peak_index,
+                measured_charge=measured_charge,
                 **signal_pe.metadata,
             )

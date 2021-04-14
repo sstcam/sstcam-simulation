@@ -78,7 +78,7 @@ class Photoelectrons:
     def get_photoelectrons_per_pixel(self, n_pixels):
         """Integer count of photoelectrons in each photosensor pixel"""
         pixel_photoelectrons = np.zeros(n_pixels, dtype=int)
-        pixel = self.pixel[self.initial == True]
+        pixel = self.pixel[self.initial]
         np.add.at(pixel_photoelectrons, pixel, 1)
         return pixel_photoelectrons
 
