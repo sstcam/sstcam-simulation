@@ -18,6 +18,9 @@ def main():
         '-c', dest='camera_path', help='Path to the camera definition file'
     )
     parser.add_argument(
+        '-o', dest='output_path', help='Path to the camera definition file'
+    )
+    parser.add_argument(
         '--nsb', default=40, type=float, dest='nsb_rate',
         help='NSB Rate to simulate (MHz)'
     )
@@ -29,11 +32,11 @@ def main():
 
     pe_path = args.pe_path
     camera_definition_path = args.camera_path
+    output_path = args.output_path
     nsb_rate = args.nsb_rate
     trigger_rate = args.trigger_rate
 
-    bias_scan_path = camera_definition_path.replace(".pkl", "_biasscan.pdf")
-    events_path = camera_definition_path.replace(".pkl", "_events.h5")
+    bias_scan_path = output_path.replace(".h5", "_biasscan.pdf")
 
     print(f"Loading camera: {camera_definition_path}")
     camera = Camera.load(camera_definition_path)
@@ -56,7 +59,7 @@ def main():
         pedestal=pedestal,
         nsb_rate=nsb_rate
     )
-    with EventsWriter(events_path, generator.event_table_layout) as writer:
+    with EventsWriter(output_path, generator.event_table_layout) as writer:
         writer.add_metadata(
             camera_definition_path=camera_definition_path,
             self_opct=camera.photoelectron_spectrum.opct,

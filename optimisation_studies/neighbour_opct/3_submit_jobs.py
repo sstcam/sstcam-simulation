@@ -18,7 +18,7 @@ def main():
     dry = args.dry
 
     script_path = join(DIR, "2_define_job.py")
-    python_cmd = "python {} -i {} -c {} --nsb 100 --trigger 600\n"
+    python_cmd = "python {} -i {} -c {} -o {} --nsb 100 --trigger 600\n"
     correct_permissions = "getfacl -d . | setfacl --set-file=- {}\n"
 
     for ifile, pe_path in enumerate(pe_paths):
@@ -32,7 +32,7 @@ def main():
                 file.write("export NUMBA_NUM_THREADS=6\n")
                 file.write(f"cd {DIR}\n")
                 file.write("pwd\n")
-                file.write(python_cmd.format(script_path, pe_path, camera_path))
+                file.write(python_cmd.format(script_path, pe_path, camera_path, h5_path))
                 file.write(correct_permissions.format(h5_path))
                 file.write(f"if [ -f {h5_path} ]; then\n")
                 file.write(f"\trm -f {shell_path}\n")
