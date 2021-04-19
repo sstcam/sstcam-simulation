@@ -69,6 +69,8 @@ class TriggerPlotter:
     def save(self, path):
         print("Figure saved to: ", path)
         self.ax.set_xscale('log')
+        self.ax.set_xlabel("Image Amplitude (p.e.)")
+        self.ax.set_ylabel("Trigger Eff.")
         self.fig.savefig(path)
 
 
