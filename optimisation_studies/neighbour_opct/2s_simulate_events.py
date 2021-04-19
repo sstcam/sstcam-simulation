@@ -17,7 +17,7 @@ def main():
     camera_paths = args.camera_paths
     dry = args.dry
 
-    script_path = join(DIR, "2_define_job.py")
+    script_path = join(DIR, "2_simulate_events.py")
     python_cmd = "python {} -i {} -c {} -o {} --nsb 100 --trigger 600\n"
     correct_permissions = "getfacl -d . | setfacl --set-file=- {}\n"
 
