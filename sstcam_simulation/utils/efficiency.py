@@ -15,6 +15,8 @@ def _pixel_active_solid_angle_nb(pixel_diameter, focal_length):
     equivalent_circular_area = pixel_diameter**2 / 4 * np.pi
     angle_pixel = pixel_diameter / focal_length
     area_ratio = pixel_area / equivalent_circular_area
+    # print(1/area_ratio)
+    # raise ValueError
     return 2 * np.pi * (1.0 - np.cos(0.5 * angle_pixel)) * area_ratio
 
 
@@ -72,7 +74,6 @@ class CameraEfficiency:
         self.mirror_reflectivity = self._df['ref.'].values
         self.window_transmissivity = self._df['filter'].values
         self.pde = self._df['q.e.'].values
-        self.cherenkov_scale = 1
 
         self.mirror_area = u.Quantity(7.931, 'm2')
         self.pixel_diameter = u.Quantity(0.0062, 'm')
@@ -158,7 +159,7 @@ class CameraEfficiency:
     @property
     def _cherenkov_diff_flux_on_ground(self):
         ref_wavelength = u.Quantity(400, u.nm)
-        return (ref_wavelength / self.wavelength)**2 * self._atmospheric_transmissivity * self.cherenkov_scale
+        return (ref_wavelength / self.wavelength)**2 * self._atmospheric_transmissivity
 
     @property
     def _cherenkov_diff_flux_at_camera(self):
