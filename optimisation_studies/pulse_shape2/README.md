@@ -28,7 +28,7 @@ p 3s_summarise_runs.py -i cameras/*_events.h5
 Combine together the summaries and extract a couple of key points from the performance curves
 
 ```
-p 4_extract_performance.py -i cameras/*_performance.h5
+p 4_extract_performance.py -i cameras/*_summary.h5
 ```
 
 ## 5_plot_performance.py
