@@ -48,6 +48,18 @@ def test_prod4_high_nsb():
     np.testing.assert_allclose(nsb_rate, 0.72, rtol=1e-2)
 
 
+def test_prod4_nominal_moonlight():
+    cam_eff = CameraEfficiency()
+    nsb_rate = cam_eff.nominal_moonlight_rate.to_value("1/ns")
+    np.testing.assert_allclose(nsb_rate, 0.145, rtol=1e-2)
+
+
+def test_prod4_high_moonlight():
+    cam_eff = CameraEfficiency()
+    nsb_rate = cam_eff.high_moonlight_rate.to_value("1/ns")
+    np.testing.assert_allclose(nsb_rate, 0.75, rtol=1e-2)
+
+
 def test_integrate_cherenkov():
     cam_eff = CameraEfficiency()
     diff_flux = cam_eff._cherenkov_diff_flux_inside_pixel

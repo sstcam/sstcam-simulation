@@ -28,7 +28,11 @@ def _integrate(wavelength, nsb_diff_flux, wavelength_min, wavelength_max):
 
 
 class CameraEfficiency:
-    def __init__(self, path=get_data("datasheet/p4eff_ASTRI-CHEC.lis")):
+    def __init__(
+            self,
+            path_window=get_data("datasheet/efficiency/prod4_window.csv"),
+            path_pde=get_data("datasheet/efficiency/prod4_pde.csv")
+    ):
         """
         Calculate parameters related to the camera efficiency
 
@@ -41,46 +45,63 @@ class CameraEfficiency:
         path : str
             Path to the efficiency file from the website - needs to be downloaded first
         """
-        if not exists(path):
-            raise ValueError(f"No file found at {path}, have you downloaded the file?")
+        if not exists(path_window):
+            raise ValueError(f"No file found at {path_window}")
 
-        columns = [
-            "wavelength",
-            "eff",
-            "eff+atm.trans.",
-            "q.e.",
-            "ref.",
-            "masts",
-            "filter",
-            "funnel",
-            "atm.trans.",
-            "Ch.light",
-            "NSB",
-            "atm.corr.",
-            "NSB site",
-            "NSB site*eff",
-            "NSB B&E",
-            "NSB B&E*eff",
-        ]
-        self._df = pd.read_csv(path, delimiter=r"\s+", names=columns)
+        if not exists(path_pde):
+            raise ValueError(f"No file found at {path_pde}")
 
-        #TODO: pass via arguments and interp
+        wavelength = np.arange(200, 999)
 
-        self.wavelength = u.Quantity(self._df['wavelength'], 'nm')
-        self._nsb_diff_flux = u.Quantity(self._df['NSB site'], '10^9 / (nm s m^2 sr)')
-        self._atmospheric_transmissivity = u.Quantity(self._df['atm.trans.'].values, '1/nm')
+        # Read environment arrays
+        df_env = pd.read_csv(get_data("datasheet/efficiency/environment.csv"))
+        env_wavelength = df_env['wavelength'].values
 
-        self.telescope_transmissivity = self._df['masts'].values[0]
-        self.mirror_reflectivity = self._df['ref.'].values
-        self.window_transmissivity = self._df['filter'].values
-        self.pde = self._df['q.e.'].values
+        def interp_env(y):
+            return np.interp(wavelength, env_wavelength, y)
+
+        nsb_diff_flux = interp_env(df_env['nsb_site'].values)
+        self._nsb_diff_flux = u.Quantity(nsb_diff_flux, '10^9 / (nm s m^2 sr)')
+        moonlight_diff_flux = interp_env(df_env['moonlight'].values)
+        # TODO: normalise moonlight
+        self._moonlight_diff_flux = u.Quantity(moonlight_diff_flux, '10^9 / (nm s m^2 sr)')
+        atmospheric_transmissivity = interp_env(df_env['atmospheric_transmissivity'].values)
+        self._atmospheric_transmissivity = u.Quantity(atmospheric_transmissivity, '1/nm')
+
+        # Read telescope arrays
+        df_tel = pd.read_csv(get_data("datasheet/efficiency/prod4_astri_telescope.csv"))
+        tel_wavelength = df_tel['wavelength'].values
+
+        def interp_tel(y):
+            return np.interp(wavelength, tel_wavelength, y)
+
+        self.telescope_transmissivity = interp_tel(df_tel['telescope_transmissivity'].values)
+        self.mirror_reflectivity = interp_tel(df_tel['mirror_reflectivity'].values)
+
+        # Read camera window transmissivity
+        df_window = pd.read_csv(path_window)
+        window_wavelength = df_window["wavelength"].values
+        window_transmissivity = df_window['window_transmissivity'].values
+        self.window_transmissivity = np.interp(wavelength, window_wavelength, window_transmissivity)
+
+        # Read camera pde
+        df_pde = pd.read_csv(path_pde)
+        pde_wavelength = df_pde["wavelength"].values
+        pde = df_pde['pde'].values
+        self.pde = np.interp(wavelength, pde_wavelength, pde)
 
         self.mirror_area = u.Quantity(7.931, 'm2')
         self.pixel_diameter = u.Quantity(0.0062, 'm')
         self.focal_length = u.Quantity(2.152, 'm/radian')
 
+        self.wavelength = u.Quantity(wavelength, 'nm')
+
         self._nsb_flux_300_650 = self._integrate_nsb(
             self._nsb_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(650, u.nm)
+        )
+
+        self._moonlight_flux_300_650 = self._integrate_nsb(
+            self._moonlight_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(650, u.nm)
         )
 
     @property
@@ -145,6 +166,49 @@ class CameraEfficiency:
     @property
     def high_nsb_rate(self):
         return self.get_scaled_nsb_rate(u.Quantity(4.3, NSB_FLUX_UNIT))
+
+    @property
+    def _moonlight_diff_flux_on_ground(self):
+        return self._moonlight_diff_flux
+
+    @property
+    def _moonlight_diff_flux_at_camera(self):
+        f = self.telescope_transmissivity * self.mirror_reflectivity
+        return self._moonlight_diff_flux_on_ground * f
+
+    @property
+    def _moonlight_diff_flux_at_pixel(self):
+        return self._moonlight_diff_flux_at_camera * self.window_transmissivity
+
+    @property
+    def _moonlight_diff_flux_inside_pixel(self):
+        return self._moonlight_diff_flux_at_pixel * self.pde
+
+    @property
+    def _moonlight_flux_inside_pixel(self):
+        wl_min = u.Quantity(200, u.nm)
+        wl_max = u.Quantity(999, u.nm)
+        return self._integrate_nsb(self._moonlight_diff_flux_inside_pixel, wl_min, wl_max)
+
+    @property
+    def _moonlight_rate_inside_pixel(self):
+        rate = self._moonlight_flux_inside_pixel * self._pixel_active_solid_angle * self.mirror_area
+        return rate
+
+    @u.quantity_input
+    def get_scaled_moonlight_rate(self, moonlight_flux: NSB_FLUX_UNIT):
+        scale = moonlight_flux / self._moonlight_flux_300_650
+        return self._moonlight_rate_inside_pixel * scale
+
+    @property
+    def nominal_moonlight_rate(self):
+        # TODO: scaled value
+        return self.get_scaled_moonlight_rate(u.Quantity(0.835, NSB_FLUX_UNIT))
+
+    @property
+    def high_moonlight_rate(self):
+        # TODO: scaled value
+        return self.get_scaled_moonlight_rate(u.Quantity(4.3, NSB_FLUX_UNIT))
 
     @u.quantity_input
     def _integrate_cherenkov(self, cherenkov_diff_flux, wavelength_min: u.nm, wavelength_max: u.nm):
