@@ -10,11 +10,11 @@ NSB_FLUX_UNIT = 1/(u.cm**2 * u.ns * u.sr)
 NSB_DIFF_FLUX_UNIT = NSB_FLUX_UNIT / u.nm
 
 
-PROD4_PATH_WINDOW = get_data("datasheet/efficiency/prod4_window.csv")
-PROD4_PATH_PDE = get_data("datasheet/efficiency/prod4_pde.csv")
+PROD4_PATH_WINDOW = get_data("datasheet/efficiency/window_prod4.csv")
+PROD4_PATH_PDE = get_data("datasheet/efficiency/pde_prod4.csv")
 PROD4_PATH_ENV = get_data("datasheet/efficiency/environment.csv")
-PROD4_PATH_TEL = get_data("datasheet/efficiency/prod4_astri_telescope.csv")
-PROD4_PATH_QUAN = get_data("datasheet/efficiency/prod4_quantities.yml")
+PROD4_PATH_TEL = get_data("datasheet/efficiency/telescope_prod4_astri.csv")
+PROD4_PATH_QUAN = get_data("datasheet/efficiency/quantities_prod4.yml")
 
 
 @njit(fastmath=True)
