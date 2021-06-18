@@ -9,6 +9,12 @@ def test_prod4_pixel_active_solid_angle():
     np.testing.assert_allclose(pixel_active_solid_angle, 8.3, rtol=1e-3)
 
 
+def test_prod4_pixel_fill_factor():
+    cam_eff = CameraEfficiency()
+    fill_factor = cam_eff.pixel_fill_factor
+    np.testing.assert_allclose(fill_factor, 0.939, rtol=1e-3)
+
+
 def test_scale_pde():
     cam_eff = CameraEfficiency()
     cam_eff.scale_pde(u.Quantity(410, u.nm), 0.5)
@@ -60,7 +66,7 @@ def test_prod4_high_moonlight():
     np.testing.assert_allclose(nsb_rate, 0.75, rtol=1e-2)
 
 
-def test_integrate_cherenkov():
+def test_prod4_integrate_cherenkov():
     cam_eff = CameraEfficiency()
     diff_flux = cam_eff._cherenkov_diff_flux_inside_pixel
     flux = cam_eff._integrate_cherenkov(diff_flux, 300 * u.nm, 550 * u.nm)
@@ -69,10 +75,17 @@ def test_integrate_cherenkov():
     np.testing.assert_allclose(flux, 56.66, rtol=1e-2)
 
 
-def test_effective_cherenkov_pde():
+def test_prod4_effective_cherenkov_pde():
     cam_eff = CameraEfficiency()
-    np.testing.assert_allclose(cam_eff.effective_cherenkov_pde, 0.42, rtol=1e-2)
+    np.testing.assert_allclose(cam_eff.effective_cherenkov_pde, 0.441, rtol=1e-3)
     cam_eff.scale_pde(u.Quantity(410, u.nm), 0.5)
-    np.testing.assert_allclose(cam_eff.effective_cherenkov_pde, 0.43, rtol=1e-2)
+    np.testing.assert_allclose(cam_eff.effective_cherenkov_pde, 0.451, rtol=1e-3)
     cam_eff.scale_pde(u.Quantity(410, u.nm), 0.25)
-    np.testing.assert_allclose(cam_eff.effective_cherenkov_pde, 0.213, rtol=1e-2)
+    np.testing.assert_allclose(cam_eff.effective_cherenkov_pde, 0.2253, rtol=1e-3)
+
+
+def test_prod4_B_TEL_1170_pde():
+    cam_eff = CameraEfficiency()
+    np.testing.assert_allclose(cam_eff._cherenkov_flux_300_550, 168.41, rtol=1e-4)
+    np.testing.assert_allclose(cam_eff._cherenkov_flux_300_550_inside_pixel_bypass_telescope, 69.58, rtol=1e-4)
+    np.testing.assert_allclose(cam_eff.B_TEL_1170_pde, 0.388, rtol=1e-4)

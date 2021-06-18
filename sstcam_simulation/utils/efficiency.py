@@ -15,8 +15,6 @@ def _pixel_active_solid_angle_nb(pixel_diameter, focal_length):
     equivalent_circular_area = pixel_diameter**2 / 4 * np.pi
     angle_pixel = pixel_diameter / focal_length
     area_ratio = pixel_area / equivalent_circular_area
-    # print(1/area_ratio)
-    # raise ValueError
     return 2 * np.pi * (1.0 - np.cos(0.5 * angle_pixel)) * area_ratio
 
 
@@ -92,6 +90,8 @@ class CameraEfficiency:
 
         self.mirror_area = u.Quantity(7.931, 'm2')
         self.pixel_diameter = u.Quantity(0.0062, 'm')
+        self.pixel_spacing = u.Quantity(0.0063978, 'm')
+        self.pixel_fill_factor = (self.pixel_diameter / self.pixel_spacing)**2
         self.focal_length = u.Quantity(2.152, 'm/radian')
 
         self.wavelength = u.Quantity(wavelength, 'nm')
@@ -102,6 +102,11 @@ class CameraEfficiency:
 
         self._moonlight_flux_300_650 = self._integrate_nsb(
             self._moonlight_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(650, u.nm)
+        )
+
+        # Sum(C1) from 300 - 550 nm (Konrad's spreadsheet)
+        self._cherenkov_flux_300_550 = self._integrate_cherenkov(
+            self._cherenkov_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(550, u.nm)
         )
 
     @property
@@ -240,9 +245,38 @@ class CameraEfficiency:
 
     @property
     def effective_cherenkov_pde(self):
-        flux = self._cherenkov_diff_flux_at_pixel
-        wl_min = u.Quantity(200, u.nm)
-        wl_max = u.Quantity(999, u.nm)
-        n_photons = self._integrate_cherenkov(flux, wl_min, wl_max)
-        n_pe = self._integrate_cherenkov(flux * self.pde, wl_min, wl_max)
-        return n_pe / n_photons
+        diff_flux_in_pixel = self._cherenkov_diff_flux_inside_pixel
+        n_pe = self._integrate_cherenkov(
+            diff_flux_in_pixel,
+            u.Quantity(200, u.nm),
+            u.Quantity(999, u.nm)
+        )
+
+        # According to Konrad's spreadsheet:
+        # normalizing to photons outside sensible range makes no sense
+        diff_flux_at_camera = self._cherenkov_diff_flux_at_camera
+        n_photons = self._integrate_cherenkov(
+            diff_flux_at_camera,
+            u.Quantity(300, u.nm),
+            u.Quantity(550, u.nm)
+        )
+        return n_pe / n_photons * self.pixel_fill_factor
+
+    @property
+    def _cherenkov_diff_flux_inside_pixel_bypass_telescope(self):
+        return self._cherenkov_diff_flux_on_ground * self.window_transmissivity * self.pde
+
+    @property
+    def _cherenkov_flux_300_550_inside_pixel_bypass_telescope(self):
+        return self._integrate_cherenkov(
+            self._cherenkov_diff_flux_inside_pixel_bypass_telescope,
+            u.Quantity(300, u.nm),
+            u.Quantity(550, u.nm)
+        )
+
+    @property
+    def B_TEL_1170_pde(self):
+        """As defined by Konrad ("broken" definition)"""
+        return (self._cherenkov_flux_300_550_inside_pixel_bypass_telescope /
+                self._cherenkov_flux_300_550 *
+                self.pixel_fill_factor)
