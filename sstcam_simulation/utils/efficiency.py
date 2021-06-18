@@ -1,5 +1,4 @@
 from sstcam_simulation.data import get_data
-from os.path import exists
 import numpy as np
 import pandas as pd
 from numba import njit
@@ -9,10 +8,9 @@ import yaml
 NSB_FLUX_UNIT = 1/(u.cm**2 * u.ns * u.sr)
 NSB_DIFF_FLUX_UNIT = NSB_FLUX_UNIT / u.nm
 
-
+PATH_ENV = get_data("datasheet/efficiency/environment.csv")
 PROD4_PATH_WINDOW = get_data("datasheet/efficiency/window_prod4.csv")
 PROD4_PATH_PDE = get_data("datasheet/efficiency/pde_prod4.csv")
-PROD4_PATH_ENV = get_data("datasheet/efficiency/environment.csv")
 PROD4_PATH_TEL = get_data("datasheet/efficiency/telescope_prod4_astri.csv")
 PROD4_PATH_QUAN = get_data("datasheet/efficiency/quantities_prod4.yml")
 
@@ -34,13 +32,19 @@ def _integrate(wavelength, nsb_diff_flux, wavelength_min, wavelength_max):
 
 
 class CameraEfficiency:
+    @u.quantity_input
     def __init__(
             self,
-            path_window=PROD4_PATH_WINDOW,
-            path_pde=PROD4_PATH_PDE,
-            path_environment=PROD4_PATH_ENV,
-            path_telescope=PROD4_PATH_TEL,
-            path_quantities=PROD4_PATH_QUAN,
+            # scalars
+            pixel_diameter: u.m,
+            pixel_fill_factor,
+            focal_length: u.m/u.radian,
+            mirror_area: u.m**2,
+            # arrays (vs wavelength)
+            telescope_transmissivity,
+            mirror_reflectivity,
+            window_transmissivity,
+            pde,
     ):
         """
         Calculate parameters related to the camera efficiency
@@ -48,74 +52,34 @@ class CameraEfficiency:
         Formulae and data obtained from the excel files at:
         https://www.mpi-hd.mpg.de/hfm/CTA/MC/Prod4/Config/Efficiencies
         Credit: Konrad Bernloehr
-
-        Parameters
-        ----------
-        path : str
-            Path to the efficiency file from the website - needs to be downloaded first
         """
-        if not exists(path_window):
-            raise ValueError(f"No file found at {path_window}")
+        self.wavelength = np.arange(200, 1000) << u.nm
+        size = self.wavelength.size
+        if not telescope_transmissivity.size == size:
+            raise ValueError("All arrays must specify values over full wavelength range")
+        if not mirror_reflectivity.size == size:
+            raise ValueError("All arrays must specify values over full wavelength range")
+        if not window_transmissivity.size == size:
+            raise ValueError("All arrays must specify values over full wavelength range")
+        if not pde.size == size:
+            raise ValueError("All arrays must specify values over full wavelength range")
 
-        if not exists(path_pde):
-            raise ValueError(f"No file found at {path_pde}")
-
-        wavelength = np.arange(200, 999)
-
-        # Read environment arrays
-        df_env = pd.read_csv(path_environment)
-        env_wavelength = df_env['wavelength'].values
-
-        def interp_env(y):
-            return np.interp(wavelength, env_wavelength, y)
-
-        nsb_diff_flux = interp_env(df_env['nsb_site'].values)
-        self._nsb_diff_flux = u.Quantity(nsb_diff_flux, '10^9 / (nm s m^2 sr)')
-        moonlight_diff_flux = interp_env(df_env['moonlight'].values)
-        # TODO: normalise moonlight
-        self._moonlight_diff_flux = u.Quantity(moonlight_diff_flux, '10^9 / (nm s m^2 sr)')
-        atmospheric_transmissivity = interp_env(df_env['atmospheric_transmissivity'].values)
-        self._atmospheric_transmissivity = u.Quantity(atmospheric_transmissivity, '1/nm')
-
-        # Read telescope arrays
-        df_tel = pd.read_csv(path_telescope)
-        tel_wavelength = df_tel['wavelength'].values
-
-        def interp_tel(y):
-            return np.interp(wavelength, tel_wavelength, y)
-
-        self.telescope_transmissivity = interp_tel(df_tel['telescope_transmissivity'].values)
-        self.mirror_reflectivity = interp_tel(df_tel['mirror_reflectivity'].values)
-
-        # Read camera window transmissivity
-        df_window = pd.read_csv(path_window)
-        window_wavelength = df_window["wavelength"].values
-        window_transmissivity = df_window['window_transmissivity'].values
-        self.window_transmissivity = np.interp(wavelength, window_wavelength, window_transmissivity)
-
-        # Read camera pde
-        df_pde = pd.read_csv(path_pde)
-        pde_wavelength = df_pde["wavelength"].values
-        pde = df_pde['pde'].values
-        self._pde = np.interp(wavelength, pde_wavelength, pde)
+        self.pixel_diameter = pixel_diameter.to('m')
+        self.pixel_fill_factor = pixel_fill_factor
+        self.focal_length = focal_length.to("m/radian")
+        self.mirror_area = mirror_area.to("m2")
+        self.telescope_transmissivity = telescope_transmissivity
+        self.mirror_reflectivity = mirror_reflectivity
+        self.window_transmissivity = window_transmissivity
+        self._pde = pde
         self._pde_scale = 1
 
-        self.mirror_area = u.Quantity(7.931, 'm2')
-        self.pixel_diameter = u.Quantity(0.0062, 'm')
-        self.pixel_spacing = u.Quantity(0.0063978, 'm')
-        self.pixel_fill_factor = (self.pixel_diameter / self.pixel_spacing)**2
-        self.focal_length = u.Quantity(2.152, 'm/radian')
-
-        # # Read scalar quantities
-        # with open(path_quantities, 'r') as stream:
-        #     quantities = yaml.safe_load(stream)
-        #
-        # self.pixel_diameter = u.Quantity(quantities["pixel_diameter"], 'm')
-        # self.pixel_fill_factor = quantities["pixel_fill_factor"]
-        # self.focal_length = u.Quantity(quantities["focal_length"], 'm/radian')
-        # self.mirror_area = u.Quantity(quantities["mirror_area"], 'm2')
-
-        self.wavelength = u.Quantity(wavelength, 'nm')
+        # Read environment arrays
+        df_env = pd.read_csv(PATH_ENV)
+        diff_flux_unit = u.Unit('10^9 / (nm s m^2 sr)')
+        self._nsb_diff_flux = df_env['nsb_site'].values << diff_flux_unit
+        self._moonlight_diff_flux = df_env['moonlight'].values << diff_flux_unit
+        self._atmospheric_transmissivity = df_env['atmospheric_transmissivity'].values << 1/u.nm
 
         self._nsb_flux_300_650 = self._integrate_nsb(
             self._nsb_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(650, u.nm)
@@ -308,3 +272,38 @@ class CameraEfficiency:
         return (self._cherenkov_flux_300_550_inside_pixel_bypass_telescope /
                 self._cherenkov_flux_300_550 *
                 self.pixel_fill_factor)
+
+    @classmethod
+    def from_prod4(cls):
+        # Read telescope arrays
+        df_tel = pd.read_csv(PROD4_PATH_TEL)
+        telescope_transmissivity = df_tel['telescope_transmissivity'].values
+        mirror_reflectivity = df_tel['mirror_reflectivity'].values
+
+        # Read camera window transmissivity
+        df_window = pd.read_csv(PROD4_PATH_WINDOW)
+        window_transmissivity = df_window['window_transmissivity'].values
+
+        # Read camera pde
+        df_pde = pd.read_csv(PROD4_PATH_PDE)
+        pde = df_pde['pde'].values
+
+        # Read scalar quantities
+        with open(PROD4_PATH_QUAN, 'r') as stream:
+            quantities = yaml.safe_load(stream)
+
+        pixel_diameter = u.Quantity(quantities["pixel_diameter"], 'm')
+        pixel_fill_factor = quantities["pixel_fill_factor"]
+        focal_length = u.Quantity(quantities["focal_length"], 'm/radian')
+        mirror_area = u.Quantity(quantities["mirror_area"], 'm2')
+
+        return cls(
+            pixel_diameter=pixel_diameter,
+            pixel_fill_factor=pixel_fill_factor,
+            focal_length=focal_length,
+            mirror_area=mirror_area,
+            telescope_transmissivity=telescope_transmissivity,
+            mirror_reflectivity=mirror_reflectivity,
+            window_transmissivity=window_transmissivity,
+            pde=pde,
+        )

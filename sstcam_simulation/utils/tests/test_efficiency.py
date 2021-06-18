@@ -1,5 +1,4 @@
-from sstcam_simulation.utils.efficiency import CameraEfficiency, \
-    PROD4_PATH_WINDOW, PROD4_PATH_PDE, PROD4_PATH_ENV, PROD4_PATH_TEL, PROD4_PATH_QUAN
+from sstcam_simulation.utils.efficiency import CameraEfficiency
 import numpy as np
 from astropy import units as u
 import pytest
@@ -7,13 +6,7 @@ import pytest
 
 @pytest.fixture(scope="module")
 def prod4_cam_eff():
-    return CameraEfficiency(
-        path_window=PROD4_PATH_WINDOW,
-        path_pde=PROD4_PATH_PDE,
-        path_environment=PROD4_PATH_ENV,
-        path_telescope=PROD4_PATH_TEL,
-        path_quantities=PROD4_PATH_QUAN,
-    )
+    return CameraEfficiency.from_prod4()
 
 
 def test_prod4_pixel_active_solid_angle(prod4_cam_eff):
