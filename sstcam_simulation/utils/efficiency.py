@@ -73,6 +73,7 @@ class CameraEfficiency:
         self.window_transmissivity = window_transmissivity
         self._pde = pde
         self._pde_scale = 1
+        self._cherenkov_scale = 1
 
         # Read environment arrays
         df_env = pd.read_csv(PATH_ENV)
@@ -81,17 +82,21 @@ class CameraEfficiency:
         self._moonlight_diff_flux = df_env['moonlight'].values << diff_flux_unit
         self._atmospheric_transmissivity = df_env['atmospheric_transmissivity'].values << 1/u.nm
 
+        # Scale cherenkov spectrum to match normalisation
+        # (from https://jama.cta-observatory.org/attachment/5505/v/refspec.pdf)
+        cherenkov_integral = self._integrate_cherenkov(
+            self._cherenkov_diff_flux_on_ground,
+            u.Quantity(300, u.nm),
+            u.Quantity(600, u.nm)
+        )
+        self._cherenkov_scale = 100 / cherenkov_integral
+
         self._nsb_flux_300_650 = self._integrate_nsb(
             self._nsb_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(650, u.nm)
         )
 
         self._moonlight_flux_300_650 = self._integrate_nsb(
             self._moonlight_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(650, u.nm)
-        )
-
-        # Sum(C1) from 300 - 550 nm (Konrad's spreadsheet)
-        self._cherenkov_flux_300_550 = self._integrate_cherenkov(
-            self._cherenkov_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(550, u.nm)
         )
 
     @property
@@ -108,7 +113,7 @@ class CameraEfficiency:
 
     @u.quantity_input
     def scale_pde(self, wavelength: u.nm, pde_at_wavelength):
-        self._pde_scale = pde_at_wavelength / np.interp(wavelength, self.wavelength, self.pde)
+        self._pde_scale = pde_at_wavelength / np.interp(wavelength, self.wavelength, self._pde)
 
     def reset_pde_scale(self):
         self._pde_scale = 1
@@ -199,12 +204,10 @@ class CameraEfficiency:
 
     @property
     def nominal_moonlight_rate(self):
-        # TODO: scaled value
         return self.get_scaled_moonlight_rate(u.Quantity(0.835, NSB_FLUX_UNIT))
 
     @property
     def high_moonlight_rate(self):
-        # TODO: scaled value
         return self.get_scaled_moonlight_rate(u.Quantity(4.3, NSB_FLUX_UNIT))
 
     @u.quantity_input
@@ -220,7 +223,8 @@ class CameraEfficiency:
     @property
     def _cherenkov_diff_flux_on_ground(self):
         ref_wavelength = u.Quantity(400, u.nm)
-        return (ref_wavelength / self.wavelength)**2 * self._atmospheric_transmissivity
+        return ((ref_wavelength / self.wavelength)**2 * self._atmospheric_transmissivity
+                * self._cherenkov_scale)
 
     @property
     def _cherenkov_diff_flux_at_camera(self):
@@ -253,6 +257,13 @@ class CameraEfficiency:
             u.Quantity(550, u.nm)
         )
         return n_pe / n_photons * self.pixel_fill_factor
+
+    @property
+    def _cherenkov_flux_300_550(self):
+        """Sum(C1) from 300 - 550 nm (Konrad's spreadsheet)"""
+        return self._integrate_cherenkov(
+            self._cherenkov_diff_flux_on_ground, u.Quantity(300, u.nm), u.Quantity(550, u.nm)
+        )
 
     @property
     def _cherenkov_diff_flux_inside_pixel_bypass_telescope(self):
