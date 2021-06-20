@@ -1,4 +1,5 @@
 from sstcam_simulation.data import get_data
+from sstcam_simulation.utils.window_durham_needle import WindowDurhamNeedle
 import numpy as np
 import pandas as pd
 from numba import njit
@@ -13,6 +14,7 @@ PROD4_PATH_WINDOW = get_data("datasheet/efficiency/window_prod4.csv")
 PROD4_PATH_PDE = get_data("datasheet/efficiency/pde_prod4.csv")
 PROD4_PATH_TEL = get_data("datasheet/efficiency/telescope_prod4_astri.csv")
 PROD4_PATH_QUAN = get_data("datasheet/efficiency/quantities_prod4.yml")
+SSTCAM_PATH_QUAN = get_data("datasheet/efficiency/quantities_sstcam.yml")
 
 
 @njit(fastmath=True)
@@ -25,10 +27,10 @@ def _pixel_active_solid_angle_nb(pixel_diameter, focal_length):
 
 
 @njit(fastmath=True)
-def _integrate(wavelength, nsb_diff_flux, wavelength_min, wavelength_max):
-    within = (wavelength >= wavelength_min) & (wavelength <= wavelength_max)
-    nsb_within = nsb_diff_flux[within]
-    return np.sum(nsb_within) - 0.5 * (nsb_within[0] + nsb_within[-1])
+def _integrate(x, y, x_min, x_max):
+    within = (x >= x_min) & (x <= x_max)
+    y_within = y[within]
+    return np.sum(y_within) - 0.5 * (y_within[0] + y_within[-1])
 
 
 class CameraEfficiency:
@@ -133,9 +135,12 @@ class CameraEfficiency:
         return self._nsb_diff_flux
 
     @property
+    def _nsb_diff_flux_at_mirror(self):
+        return self._nsb_diff_flux_on_ground * self.telescope_transmissivity
+
+    @property
     def _nsb_diff_flux_at_camera(self):
-        f = self.telescope_transmissivity * self.mirror_reflectivity
-        return self._nsb_diff_flux_on_ground * f
+        return self._nsb_diff_flux_at_mirror * self.mirror_reflectivity
 
     @property
     def _nsb_diff_flux_at_pixel(self):
@@ -156,6 +161,40 @@ class CameraEfficiency:
         rate = self._nsb_flux_inside_pixel * self._pixel_active_solid_angle * self.mirror_area
         return rate
 
+    @property
+    def n_nsb_photoelectrons(self):
+        return self._integrate_nsb(
+            self._nsb_diff_flux_inside_pixel,
+            u.Quantity(200, u.nm),
+            u.Quantity(999, u.nm)
+        ) * self.pixel_fill_factor
+
+    @property
+    def camera_nsb_pde(self):
+        n_pe = self.n_nsb_photoelectrons
+
+        # According to Konrad's spreadsheet:
+        # normalizing to photons outside sensible range makes no sense
+        n_photons = self._integrate_nsb(
+            self._nsb_diff_flux_at_camera,
+            u.Quantity(300, u.nm),
+            u.Quantity(550, u.nm)
+        )
+        return n_pe / n_photons
+
+    @property
+    def telescope_nsb_pde(self):
+        n_pe = self.n_nsb_photoelectrons
+
+        # According to Konrad's spreadsheet:
+        # normalizing to photons outside sensible range makes no sense
+        n_photons = self._integrate_nsb(
+            self._nsb_diff_flux_at_mirror,
+            u.Quantity(300, u.nm),
+            u.Quantity(550, u.nm)
+        )
+        return n_pe / n_photons
+
     @u.quantity_input
     def get_scaled_nsb_rate(self, nsb_flux: NSB_FLUX_UNIT):
         scale = nsb_flux / self._nsb_flux_300_650
@@ -164,10 +203,6 @@ class CameraEfficiency:
     @property
     def nominal_nsb_rate(self):
         return self.get_scaled_nsb_rate(u.Quantity(0.24, NSB_FLUX_UNIT))
-
-    @property
-    def high_nsb_rate(self):
-        return self.get_scaled_nsb_rate(u.Quantity(4.3, NSB_FLUX_UNIT))
 
     @property
     def _moonlight_diff_flux_on_ground(self):
@@ -203,11 +238,7 @@ class CameraEfficiency:
         return self._moonlight_rate_inside_pixel * scale
 
     @property
-    def nominal_moonlight_rate(self):
-        return self.get_scaled_moonlight_rate(u.Quantity(0.835, NSB_FLUX_UNIT))
-
-    @property
-    def high_moonlight_rate(self):
+    def maximum_nsb_rate(self):
         return self.get_scaled_moonlight_rate(u.Quantity(4.3, NSB_FLUX_UNIT))
 
     @u.quantity_input
@@ -227,9 +258,12 @@ class CameraEfficiency:
                 * self._cherenkov_scale)
 
     @property
+    def _cherenkov_diff_flux_at_mirror(self):
+        return self._cherenkov_diff_flux_on_ground * self.telescope_transmissivity
+
+    @property
     def _cherenkov_diff_flux_at_camera(self):
-        f = self.telescope_transmissivity * self.mirror_reflectivity
-        return self._cherenkov_diff_flux_on_ground * f
+        return self._cherenkov_diff_flux_at_mirror * self.mirror_reflectivity
 
     @property
     def _cherenkov_diff_flux_at_pixel(self):
@@ -240,23 +274,38 @@ class CameraEfficiency:
         return self._cherenkov_diff_flux_at_pixel * self.pde
 
     @property
-    def effective_cherenkov_pde(self):
-        diff_flux_in_pixel = self._cherenkov_diff_flux_inside_pixel
-        n_pe = self._integrate_cherenkov(
-            diff_flux_in_pixel,
+    def n_cherenkov_photoelectrons(self):
+        return self._integrate_cherenkov(
+            self._cherenkov_diff_flux_inside_pixel,
             u.Quantity(200, u.nm),
             u.Quantity(999, u.nm)
-        )
+        ) * self.pixel_fill_factor
+
+    @property
+    def camera_cherenkov_pde(self):
+        n_pe = self.n_cherenkov_photoelectrons
 
         # According to Konrad's spreadsheet:
         # normalizing to photons outside sensible range makes no sense
-        diff_flux_at_camera = self._cherenkov_diff_flux_at_camera
         n_photons = self._integrate_cherenkov(
-            diff_flux_at_camera,
+            self._cherenkov_diff_flux_at_camera,
             u.Quantity(300, u.nm),
             u.Quantity(550, u.nm)
         )
-        return n_pe / n_photons * self.pixel_fill_factor
+        return n_pe / n_photons
+
+    @property
+    def telescope_cherenkov_pde(self):
+        n_pe = self.n_cherenkov_photoelectrons
+
+        # According to Konrad's spreadsheet:
+        # normalizing to photons outside sensible range makes no sense
+        n_photons = self._integrate_cherenkov(
+            self._cherenkov_diff_flux_at_mirror,
+            u.Quantity(300, u.nm),
+            u.Quantity(550, u.nm)
+        )
+        return n_pe / n_photons
 
     @property
     def _cherenkov_flux_300_550(self):
@@ -283,6 +332,15 @@ class CameraEfficiency:
         return (self._cherenkov_flux_300_550_inside_pixel_bypass_telescope /
                 self._cherenkov_flux_300_550 *
                 self.pixel_fill_factor)
+
+    @property
+    def camera_signal_to_noise(self):
+        return self.camera_cherenkov_pde / np.sqrt(self.camera_nsb_pde)
+
+    @property
+    def telescope_signal_to_noise(self):
+        """B-TEL-0090 Signal to Noise"""
+        return self.telescope_cherenkov_pde / np.sqrt(self.telescope_nsb_pde)
 
     @classmethod
     def from_prod4(cls):
@@ -316,5 +374,56 @@ class CameraEfficiency:
             telescope_transmissivity=telescope_transmissivity,
             mirror_reflectivity=mirror_reflectivity,
             window_transmissivity=window_transmissivity,
+            pde=pde,
+        )
+
+    @classmethod
+    def from_sstcam(cls, off_axis_angle=0, scale_pde_wavelength=None, pde_at_wavelength=None):
+        # Read telescope arrays TODO: updated & vs axis angle
+        df_tel = pd.read_csv(PROD4_PATH_TEL)
+        telescope_transmissivity = df_tel['telescope_transmissivity'].values
+        mirror_reflectivity = df_tel['mirror_reflectivity'].values
+
+        # Read angular distribution of photon incidence TODO: real and vs axis angle
+        from scipy.stats import norm
+        incidence_angle = np.linspace(0, 60, 100)
+        incidence_pdf = norm.pdf(incidence_angle, off_axis_angle*6, 20)
+        incidence_pdf /= np.trapz(incidence_pdf, incidence_angle)
+
+        # Read camera window transmissivity
+        window = WindowDurhamNeedle()
+        # Weight by angular distribution of photon incidence
+        weighted_window_transmissivity = np.trapz(  # TODO: trapz or sum?
+            window.interpolate(incidence_angle) * incidence_pdf[:, None],
+            incidence_angle,
+            axis=0
+        ) / np.trapz(incidence_pdf, incidence_angle)
+
+        # Read camera pde
+        df_pde = pd.read_csv(PROD4_PATH_PDE)  # TODO (new data + weighting)
+        pde = df_pde['pde'].values
+        if scale_pde_wavelength:
+            wavelength = df_pde['wavelength'].values << u.nm
+            # TODO: only calculate according to the 0 incidence angle, and apply same scaling to all
+            pde_scale = pde_at_wavelength / np.interp(scale_pde_wavelength, wavelength, self._pde)
+
+        # Read scalar quantities
+        with open(SSTCAM_PATH_QUAN, 'r') as stream:
+            quantities = yaml.safe_load(stream)
+
+        pixel_diameter = u.Quantity(quantities["pixel_diameter"], 'm')
+        pixel_fill_factor = quantities["pixel_fill_factor"]
+        focal_length = u.Quantity(quantities["focal_length"], 'm/radian')
+        # TODO: vs axis angle? Or already accounted for in incidence angle datasets?
+        mirror_area = u.Quantity(quantities["mirror_area"], 'm2')
+
+        return cls(
+            pixel_diameter=pixel_diameter,
+            pixel_fill_factor=pixel_fill_factor,
+            focal_length=focal_length,
+            mirror_area=mirror_area,
+            telescope_transmissivity=telescope_transmissivity,
+            mirror_reflectivity=mirror_reflectivity,
+            window_transmissivity=weighted_window_transmissivity,
             pde=pde,
         )

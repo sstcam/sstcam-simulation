@@ -1,5 +1,4 @@
 from sstcam_simulation.data import get_data
-from sstcam_simulation.utils.efficiency import CameraEfficiency
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -21,7 +20,7 @@ class WindowDurhamNeedle:
         # self.df = self.df.interpolate(method="cubic")
         self.df = self.df.interpolate(limit_area="outside", limit_direction="both")
 
-    def plot_measured(self):
+    def plot_measured(self, alpha=1):
         df = self.df
         df_no_interp = self._df_no_interp
 
@@ -36,19 +35,17 @@ class WindowDurhamNeedle:
         fig, ax = plt.subplots()
         for label, col in d.items():
             color = ax._get_lines.get_next_color()
-            ax.plot(df.index, df[col], ":", color=color)
-            ax.plot(df_no_interp.index, df_no_interp[col], "-", color=color, label=label)
+            ax.plot(df.index, df[col], ":", alpha=alpha, color=color)
+            ax.plot(df_no_interp.index, df_no_interp[col], "-", alpha=alpha, color=color, label=label)
 
+        from sstcam_simulation.utils.efficiency import CameraEfficiency
         c = CameraEfficiency.from_prod4()
-        ax.plot(c.wavelength, c.window_transmissivity, color='black', label="prod4")
+        ax.plot(c.wavelength, c.window_transmissivity, alpha=alpha, color='black', label="prod4")
         ax.legend()
         ax.set_xlabel("Wavelength (nm)")
         ax.set_ylabel("Transmissivity")
 
     def interpolate(self, angle):
-        if not 0 <= angle <= 60:
-            raise ValueError("Cannot interpolated outside of range 0 - 60 degrees")
-
         angles = np.array([0, 20, 45, 50, 60])
         arrays = np.vstack([
             self.df['0_measured'],

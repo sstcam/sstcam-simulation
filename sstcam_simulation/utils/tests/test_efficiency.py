@@ -59,23 +59,10 @@ def test_prod4_nominal_nsb():
     np.testing.assert_allclose(nsb_rate, 0.04, rtol=1e-2)
 
 
-def test_prod4_high_nsb():
+def test_prod4_maximum_nsb():
     prod4_cam_eff = CameraEfficiency.from_prod4()
-    nsb_rate = prod4_cam_eff.high_nsb_rate.to_value("1/ns")
-    np.testing.assert_allclose(nsb_rate, 0.72, rtol=1e-2)
-
-
-def test_prod4_nominal_moonlight():
-    prod4_cam_eff = CameraEfficiency.from_prod4()
-    nsb_rate = prod4_cam_eff.nominal_moonlight_rate.to_value("1/ns")
-    np.testing.assert_allclose(nsb_rate, 0.145, rtol=1e-2)
-
-
-def test_prod4_high_moonlight():
-    prod4_cam_eff = CameraEfficiency.from_prod4()
-    nsb_rate = prod4_cam_eff.high_moonlight_rate.to_value("1/ns")
+    nsb_rate = prod4_cam_eff.maximum_nsb_rate.to_value("1/ns")
     np.testing.assert_allclose(nsb_rate, 0.75, rtol=1e-2)
-
 
 def test_prod4_integrate_cherenkov():
     prod4_cam_eff = CameraEfficiency.from_prod4()
@@ -92,14 +79,29 @@ def test_prod4_integrate_cherenkov():
     np.testing.assert_allclose(flux, 56.66, rtol=1e-2)
 
 
-def test_prod4_effective_cherenkov_pde():
+def test_prod4_camera_cherenkov_pde():
     prod4_cam_eff = CameraEfficiency.from_prod4()
-    np.testing.assert_allclose(prod4_cam_eff.effective_cherenkov_pde, 0.441, rtol=1e-3)
+    np.testing.assert_allclose(prod4_cam_eff.camera_cherenkov_pde, 0.441, rtol=1e-3)
     prod4_cam_eff.scale_pde(u.Quantity(410, u.nm), 0.5)
-    np.testing.assert_allclose(prod4_cam_eff.effective_cherenkov_pde, 0.451, rtol=1e-3)
+    np.testing.assert_allclose(prod4_cam_eff.camera_cherenkov_pde, 0.451, rtol=1e-3)
     prod4_cam_eff.scale_pde(u.Quantity(410, u.nm), 0.25)
-    np.testing.assert_allclose(prod4_cam_eff.effective_cherenkov_pde, 0.2253, rtol=1e-3)
+    np.testing.assert_allclose(prod4_cam_eff.camera_cherenkov_pde, 0.2253, rtol=1e-3)
     prod4_cam_eff.reset_pde_scale()
+
+
+def test_prod4_telescope_cherenkov_pde():
+    prod4_cam_eff = CameraEfficiency.from_prod4()
+    np.testing.assert_allclose(prod4_cam_eff.telescope_cherenkov_pde, 0.342, rtol=1e-3)
+
+
+def test_prod4_camera_nsb_pde():
+    prod4_cam_eff = CameraEfficiency.from_prod4()
+    np.testing.assert_allclose(prod4_cam_eff.camera_nsb_pde, 0.749, rtol=1e-3)
+
+
+def test_prod4_telescope_nsb_pde():
+    prod4_cam_eff = CameraEfficiency.from_prod4()
+    np.testing.assert_allclose(prod4_cam_eff.telescope_nsb_pde, 0.5875, rtol=1e-3)
 
 
 def test_prod4_B_TEL_1170_pde():
@@ -113,3 +115,13 @@ def test_prod4_B_TEL_1170_pde():
     np.testing.assert_allclose(prod4_cam_eff.B_TEL_1170_pde, 0.388, rtol=1e-4)
     prod4_cam_eff._cherenkov_scale = 1000
     np.testing.assert_allclose(prod4_cam_eff.B_TEL_1170_pde, 0.388, rtol=1e-4)
+
+
+def test_prod4_camera_signal_to_noise():
+    prod4_cam_eff = CameraEfficiency.from_prod4()
+    np.testing.assert_allclose(prod4_cam_eff.camera_signal_to_noise, 0.510, rtol=1e-3)
+
+
+def test_prod4_telescope_signal_to_noise():
+    prod4_cam_eff = CameraEfficiency.from_prod4()
+    np.testing.assert_allclose(prod4_cam_eff.telescope_signal_to_noise, 0.446, rtol=1e-3)
