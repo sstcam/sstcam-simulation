@@ -37,6 +37,7 @@ class PhotoelectronPulse(metaclass=ABCMeta):
         amplitude = self._function(self.time)
 
         # Normalise the pulse to the correct units
+        self.mv_per_pe = mv_per_pe
         if mv_per_pe is None:
             self._y_scale = amplitude.sum() * CONTINUOUS_READOUT_SAMPLE_WIDTH
         else:
