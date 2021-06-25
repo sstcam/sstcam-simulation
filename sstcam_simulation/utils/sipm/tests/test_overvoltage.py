@@ -1,4 +1,4 @@
-from sstcam_simulation.utils.sipm import SiPMSpecification
+from sstcam_simulation.utils.sipm import SiPMOvervoltage
 import numpy as np
 import pytest
 
@@ -15,7 +15,7 @@ def sipm_data():
 def test_from_csv(sipm_data, tmp_path):
     path = str(tmp_path / "test.txt")
     np.savetxt(path, np.column_stack([*sipm_data]))
-    sipm = SiPMSpecification.from_csv(path)
+    sipm = SiPMOvervoltage.from_csv(path)
     np.testing.assert_allclose(sipm._overvoltage_array, sipm_data[0])
     np.testing.assert_allclose(sipm._gain_array, sipm_data[1])
     np.testing.assert_allclose(sipm._opct_array, sipm_data[2])
@@ -23,7 +23,7 @@ def test_from_csv(sipm_data, tmp_path):
 
 
 def test_setters(sipm_data):
-    sipm = SiPMSpecification(*sipm_data)
+    sipm = SiPMOvervoltage(*sipm_data)
     sipm.overvoltage = 3.123
     overvoltage = sipm.overvoltage
     gain = sipm.gain
@@ -54,7 +54,7 @@ def test_setters(sipm_data):
 
 
 def test_scale_gain(sipm_data):
-    sipm = SiPMSpecification(*sipm_data)
+    sipm = SiPMOvervoltage(*sipm_data)
     sipm.scale_gain(3, 123)
     sipm.overvoltage = 3
     np.testing.assert_allclose(sipm.gain, 123)
@@ -63,7 +63,7 @@ def test_scale_gain(sipm_data):
 
 
 def test_scale_opct(sipm_data):
-    sipm = SiPMSpecification(*sipm_data)
+    sipm = SiPMOvervoltage(*sipm_data)
     sipm.scale_opct(3, 123)
     sipm.overvoltage = 3
     np.testing.assert_allclose(sipm.opct, 123)

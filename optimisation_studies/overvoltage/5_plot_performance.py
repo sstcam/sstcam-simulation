@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from CHECLabPy.plotting.setup import Plotter
 from CHECLabPy.plotting.resolutions import ChargeResolutionPlotter
+from scipy.interpolate import RegularGridInterpolator
+from IPython import embed
 
 # Requirements
 CRREQ_2PE = ChargeResolutionPlotter.requirement(np.array([2]))[0]
@@ -20,10 +22,50 @@ MINIMGAMP_GAMMA_50PDE = 250 * 0.5
 MINIMGAMP_PROTON_50PDE = 480 * 0.5
 
 
-class ComparisonPlot(Plotter):
-    def plot(self, x, y, label):
-        self.ax.plot(x, y, 'x', label=label)
+class MIAContourPlot(Plotter):
+    def __init__(self, interpolator, talk):
+        self.interpolator = interpolator
+        super().__init__(talk=talk)
 
+    def plot_opct_vs_nsb(self, opct: np.ndarray, nsb: np.ndarray, mv_per_pe: float):
+        xg, yg, zg = np.meshgrid(opct, nsb, mv_per_pe, indexing='ij')
+        opct = xg.ravel()
+        nsb = yg.ravel()
+        mv_per_pe = zg.ravel()
+        mia = self.interpolator(opct, nsb, mv_per_pe)
+
+        c = self.ax.tricontourf(opct, nsb, mia, 15)
+        self.ax.set_xlabel("OCT")
+        self.ax.set_ylabel("NSB (MHz)")
+        cb = self.fig.colorbar(c, ax=self.ax, label="Minimum Image Amplitude")
+
+    def plot_mv_per_pe_vs_nsb(self, mv_per_pe: np.ndarray, nsb: np.ndarray, opct: float):
+        xg, yg, zg = np.meshgrid(opct, nsb, mv_per_pe, indexing='ij')
+        opct = xg.ravel()
+        nsb = yg.ravel()
+        mv_per_pe = zg.ravel()
+        mia = self.interpolator(opct, nsb, mv_per_pe)
+
+        c = self.ax.tricontourf(mv_per_pe, nsb, mia, 15)
+        self.ax.set_xlabel("mV per p.e.")
+        self.ax.set_ylabel("NSB (MHz)")
+        cb = self.fig.colorbar(c, ax=self.ax, label="Minimum Image Amplitude")
+
+
+class MinimumImageAmplitudeInterpolator:
+    def __init__(self, df):
+        xcol, ycol, zcol, vcol = "opct", "nsb_rate", "mv_per_pe", "minimum_image_amplitude"
+        df = df.sort_values(by=[xcol, ycol, zcol])
+        xvals = df[xcol].unique()
+        yvals = df[ycol].unique()
+        zvals = df[zcol].unique()
+        vvals = df[vcol].values.reshape(len(xvals), len(yvals), len(zvals))
+
+        self.f = RegularGridInterpolator((xvals, yvals, zvals), vvals)
+
+    def __call__(self, opct, nsb, mv_per_pe):
+        pts = np.column_stack([opct, nsb, mv_per_pe])
+        return self.f(pts)
 
 
 def main():
@@ -34,63 +76,19 @@ def main():
 
     talk = True
 
-    p_comparison = ComparisonPlot(talk=talk)
-    performance_col = "minimum_image_amplitude"
-    p_comparison.plot(df_g['pulse_width'], df_g[performance_col], None)
-    p_comparison.ax.axhline(MINIMGAMP_GAMMA_50PDE, ls='--', color='black', label="Requirement (Gamma, 50% PDE)")
-    p_comparison.add_legend()
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
-    p_comparison.ax.set_ylabel("Minimum Image Amplitude (p.e.)")
-    p_comparison.save("minimum_image_amplitude_gamma.pdf")
+    interpolator = MinimumImageAmplitudeInterpolator(df_g)
 
-    p_comparison = ComparisonPlot(talk=talk)
-    performance_col = "minimum_image_amplitude"
-    p_comparison.plot(df_p['pulse_width'], df_p[performance_col], None)
-    p_comparison.ax.axhline(MINIMGAMP_PROTON_50PDE, ls='--', color='black', label="Requirement (Proton, 50% PDE)")
-    p_comparison.add_legend()
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
-    p_comparison.ax.set_ylabel("Minimum Image Amplitude (p.e.)")
-    p_comparison.save("minimum_image_amplitude_proton.pdf")
+    opct = np.linspace(0, 0.5, 100)
+    nsb = np.linspace(0, 50, 100)
+    mv_per_pe = np.linspace(0.4, 4, 100)
 
-    p_comparison = ComparisonPlot(talk=talk)
-    performance_col = "cr_extracted_2pe"
-    p_comparison.plot(df_g['pulse_width'], df_g[performance_col], "gamma")
-    p_comparison.plot(df_p['pulse_width'], df_p[performance_col], "proton")
-    p_comparison.ax.axhline(CRREQ_2PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.add_legend()
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
-    p_comparison.ax.set_ylabel("Fractional CR @ 2 p.e.")
-    p_comparison.save("cr_extracted_2pe.pdf")
+    p_2d = MIAContourPlot(interpolator, talk=talk)
+    p_2d.plot_opct_vs_nsb(opct, nsb, 4)
+    p_2d.save("mia_opct_vs_nsb.pdf")
 
-    p_comparison = ComparisonPlot(talk=talk)
-    performance_col = "cr_extracted_20pe"
-    p_comparison.plot(df_g['pulse_width'], df_g[performance_col], "gamma")
-    p_comparison.plot(df_p['pulse_width'], df_p[performance_col], "proton")
-    p_comparison.ax.axhline(CRREQ_20PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.add_legend()
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
-    p_comparison.ax.set_ylabel("Fractional CR @ 20 p.e.")
-    p_comparison.save("cr_extracted_20pe.pdf")
-
-    p_comparison = ComparisonPlot(talk=talk)
-    performance_col = "cr_extracted_200pe"
-    p_comparison.plot(df_g['pulse_width'], df_g[performance_col], "gamma")
-    p_comparison.plot(df_p['pulse_width'], df_p[performance_col], "proton")
-    p_comparison.ax.axhline(CRREQ_200PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.add_legend()
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
-    p_comparison.ax.set_ylabel("Fractional CR @ 200 p.e.")
-    p_comparison.save("cr_extracted_200pe.pdf")
-
-    p_comparison = ComparisonPlot(talk=talk)
-    performance_col = "cr_extracted_2000pe"
-    p_comparison.plot(df_g['pulse_width'], df_g[performance_col], "gamma")
-    p_comparison.plot(df_p['pulse_width'], df_p[performance_col], "proton")
-    p_comparison.ax.axhline(CRREQ_2000PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.add_legend()
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
-    p_comparison.ax.set_ylabel("Fractional CR @ 2000 p.e.")
-    p_comparison.save("cr_extracted_2000pe.pdf")
+    p_2d = MIAContourPlot(interpolator, talk=talk)
+    p_2d.plot_mv_per_pe_vs_nsb(mv_per_pe, nsb, 0.08)
+    p_2d.save("mia_mVperpe_vs_nsb.pdf")
 
 
 if __name__ == '__main__':

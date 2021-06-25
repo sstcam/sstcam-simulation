@@ -1,5 +1,6 @@
 from sstcam_simulation.data import get_data
 from sstcam_simulation.utils.window_durham_needle import WindowDurhamNeedle
+from sstcam_simulation.utils.sipm.pde import PDEvsWavelength
 import numpy as np
 import pandas as pd
 from numba import njit
@@ -85,7 +86,10 @@ class CameraEfficiency:
         self._atmospheric_transmissivity = df_env['atmospheric_transmissivity'].values << 1/u.nm
 
         # Scale cherenkov spectrum to match normalisation
-        # (from https://jama.cta-observatory.org/attachment/5505/v/refspec.pdf)
+        # scaled to 100 photons/m2 in the wavelength range from 300–600 nm
+        # a value typical for γ-ray showers of about 500 GeV viewed at small core distances
+        # (from https://jama.cta-observatory.org/perspective.req#/items/28666)
+        # TODO: check wrt area
         cherenkov_integral = self._integrate_cherenkov(
             self._cherenkov_diff_flux_on_ground,
             u.Quantity(300, u.nm),
@@ -378,7 +382,7 @@ class CameraEfficiency:
         )
 
     @classmethod
-    def from_sstcam(cls, off_axis_angle=0, scale_pde_wavelength=None, pde_at_wavelength=None):
+    def from_sstcam(cls, fov_angle=0, pde_at_450nm=None):
         # Read telescope arrays TODO: updated & vs axis angle
         df_tel = pd.read_csv(PROD4_PATH_TEL)
         telescope_transmissivity = df_tel['telescope_transmissivity'].values
@@ -387,25 +391,33 @@ class CameraEfficiency:
         # Read angular distribution of photon incidence TODO: real and vs axis angle
         from scipy.stats import norm
         incidence_angle = np.linspace(0, 60, 100)
-        incidence_pdf = norm.pdf(incidence_angle, off_axis_angle*6, 20)
+        # incidence_pdf = norm.pdf(incidence_angle, off_axis_angle*6, 20)
+        # incidence_pdf = np.ones(incidence_angle.size)
+        incidence_pdf = np.zeros(incidence_angle.size)
+        incidence_pdf[0] = 1
         incidence_pdf /= np.trapz(incidence_pdf, incidence_angle)
+
+        def weight_by_incidence_angle(y_2d) -> np.ndarray:
+            # noinspection PyTypeChecker
+            return np.trapz(  # TODO: trapz or sum?
+                y_2d * incidence_pdf[:, None], incidence_angle, axis=0
+            ) / np.trapz(incidence_pdf, incidence_angle)
 
         # Read camera window transmissivity
         window = WindowDurhamNeedle()
         # Weight by angular distribution of photon incidence
-        weighted_window_transmissivity = np.trapz(  # TODO: trapz or sum?
-            window.interpolate(incidence_angle) * incidence_pdf[:, None],
-            incidence_angle,
-            axis=0
-        ) / np.trapz(incidence_pdf, incidence_angle)
+        # noinspection PyTypeChecker
+        weighted_window_transmissivity = weight_by_incidence_angle(
+            window.interpolate(incidence_angle)
+        )
 
         # Read camera pde
-        df_pde = pd.read_csv(PROD4_PATH_PDE)  # TODO (new data + weighting)
-        pde = df_pde['pde'].values
-        if scale_pde_wavelength:
-            wavelength = df_pde['wavelength'].values << u.nm
-            # TODO: only calculate according to the 0 incidence angle, and apply same scaling to all
-            pde_scale = pde_at_wavelength / np.interp(scale_pde_wavelength, wavelength, self._pde)
+        pde_vs_wavelength = PDEvsWavelength.LVR3_75um_6mm()
+        if pde_at_450nm:
+            pde_vs_wavelength.scale(u.Quantity(450, u.nm), pde_at_450nm)
+        weighted_pde = weight_by_incidence_angle(
+            pde_vs_wavelength.interpolate(incidence_angle)
+        )
 
         # Read scalar quantities
         with open(SSTCAM_PATH_QUAN, 'r') as stream:
@@ -425,5 +437,5 @@ class CameraEfficiency:
             telescope_transmissivity=telescope_transmissivity,
             mirror_reflectivity=mirror_reflectivity,
             window_transmissivity=weighted_window_transmissivity,
-            pde=pde,
+            pde=weighted_pde,
         )

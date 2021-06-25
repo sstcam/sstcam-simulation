@@ -1,10 +1,11 @@
 import numpy as np
 from numpy.polynomial.polynomial import polyfit, polyval
 from scipy.interpolate import interp1d
+from sstcam_simulation.data import get_data
 from matplotlib import pyplot as plt
 
 
-class SiPMSpecification:
+class SiPMOvervoltage:
     def __init__(self, overvoltage, gain, opct, pde):
         """
         SiPM parameters and their relation to overvoltage
@@ -31,6 +32,36 @@ class SiPMSpecification:
     @classmethod
     def from_csv(cls, path):
         return cls(*np.loadtxt(path, unpack=True))
+
+    @classmethod
+    def lct5_6mm_50um_epoxy(cls):
+        path = get_data("datasheet/ov_lct5_6mm_50um_epoxy.txt")
+        return SiPMOvervoltage.from_csv(path)
+
+    @classmethod
+    def lct5_6mm_75um_epoxy(cls):
+        path = get_data("datasheet/ov_lct5_6mm_75um_epoxy.txt")
+        return SiPMOvervoltage.from_csv(path)
+
+    @classmethod
+    def lvr3_6mm_50um_silicon(cls):
+        path = get_data("datasheet/ov_lvr3_6mm_50um_silicon.txt")
+        return SiPMOvervoltage.from_csv(path)
+
+    @classmethod
+    def lvr3_6mm_50um_uncoated(cls):
+        path = get_data("datasheet/ov_lvr3_6mm_50um_uncoated.txt")
+        return SiPMOvervoltage.from_csv(path)
+
+    @classmethod
+    def lvr3_6mm_75um_silicon(cls):
+        path = get_data("datasheet/ov_lvr3_6mm_75um_silicon.txt")
+        return SiPMOvervoltage.from_csv(path)
+
+    @classmethod
+    def lvr3_6mm_75um_uncoated(cls):
+        path = get_data("datasheet/ov_lvr3_6mm_75um_uncoated.txt")
+        return SiPMOvervoltage.from_csv(path)
 
     @property
     def overvoltage(self):

@@ -12,7 +12,7 @@ p 1_define_cameras.py -o cameras
 Job submission script for simulating the events
 
 ```
-p 2s_simulate_events.py -i /lfs/l2/chec/userspace/jasonjw/Data/sim_telarray/d200616_prod4/*/*_pe.h5 -c /lfs/l2/chec/Software/sstcam-simulation/optimisation_studies/pulse_shape2/cameras/*.pkl
+p 2s_simulate_events.py -i /lfs/l2/chec/userspace/jasonjw/Data/sim_telarray/d200616_prod4/*/*_pe.h5 -c /lfs/l2/chec/Software/sstcam-simulation/optimisation_studies/overvoltage/cameras/*.pkl
 ```
 
 ## 3s_summarise_runs.py
