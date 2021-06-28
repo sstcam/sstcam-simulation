@@ -35,7 +35,7 @@ def main():
             coupling = ACOffsetCoupling(pulse_area=pulse.area, spectrum_average=spe.average)
             camera = Camera(**camera_kwargs, photoelectron_pulse=pulse, coupling=coupling)
 
-            name = f"width_{width:.2f}.pkl"
+            name = f"width_{width:.2f}_height_{mv_per_pe:.2f}.pkl"
             camera.save(join(output_dir, name))
 
 
