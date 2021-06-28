@@ -18,7 +18,7 @@ def main():
     dry = args.dry
 
     script_path = join(DIR, "2_simulate_events.py")
-    python_cmd = "python {} -i {} -c {} -o {} --nsb 100 --trigger 600\n"
+    python_cmd = "python {} -i {} -c {} -o {} --nsb 40 --trigger 600\n"
     correct_permissions = "getfacl -d . | setfacl --set-file=- {}\n"
 
     for ifile, pe_path in enumerate(pe_paths):
