@@ -31,13 +31,7 @@ def main():
     for mv_per_pe in np.linspace(0.5, 4, 5):
         for width in [2,  4,  6, 8, 10, 14, 20]:
             sigma = width / 2.355
-
             pulse = GaussianPulse(30, sigma, 60, mv_per_pe=mv_per_pe)
-            above = np.abs(pulse.amplitude) > 0.001
-            pulse.time = pulse.time[above]
-            pulse.amplitude = pulse.amplitude[above]
-            pulse.origin = pulse.amplitude.argmax() - pulse.amplitude.size // 2
-
             coupling = ACOffsetCoupling(pulse_area=pulse.area, spectrum_average=spe.average)
             camera = Camera(**camera_kwargs, photoelectron_pulse=pulse, coupling=coupling)
 
