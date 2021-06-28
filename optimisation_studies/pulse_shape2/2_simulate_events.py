@@ -44,7 +44,7 @@ def main():
     # Determine calibration
     extractor = ChargeExtractor.from_camera(camera)
     pedestal = obtain_pedestal(camera, extractor, nsb_rate)
-    threshold = obtain_trigger_threshold(camera, nsb_rate, trigger_rate, bias_scan_path)
+    threshold = obtain_trigger_threshold(camera, nsb_rate*2, trigger_rate, bias_scan_path)
 
     camera.update_trigger_threshold(threshold)
     camera.coupling.update_nsb_rate(nsb_rate)
@@ -60,6 +60,9 @@ def main():
         writer.add_metadata(
             camera_definition_path=camera_definition_path,
             pulse_width=camera.photoelectron_pulse.sigma * 2.355,
+            mv_per_pe=camera.photoelectron_pulse.mv_per_pe,
+            readout_noise_stddev=camera.readout_noise.stddev,
+            digitisation_noise_stddev=camera.digitisation_noise.stddev,
             nsb_rate=nsb_rate,
             trigger_rate=trigger_rate,
             trigger_threshold=threshold,

@@ -92,10 +92,13 @@ def main():
             metadata = store['metadata'].iloc[0].to_dict()
             shower_primary_id = metadata['shower_primary_id']
             pulse_width = metadata['pulse_width']
+            mv_per_pe = metadata['mv_per_pe']
+            readout_noise_stddev = metadata['readout_noise_stddev']
+            digitisation_noise_stddev = metadata['digitisation_noise_stddev']
             trigger_threshold = metadata['trigger_threshold']
             pedestal = metadata['pedestal']
 
-            key = (shower_primary_id, pulse_width)
+            key = (shower_primary_id, pulse_width, mv_per_pe, readout_noise_stddev, digitisation_noise_stddev)
 
             trigger_threshold_collection[key].append(trigger_threshold)
             pedestal_collection[key].append(pedestal)
@@ -114,7 +117,7 @@ def main():
     keys = cr_extracted_collection.keys()
     d_list = []
     for key in tqdm(keys):
-        shower_primary_id, pulse_width = key
+        shower_primary_id, pulse_width, mv_per_pe, readout_noise_stddev, digitisation_noise_stddev = key
 
         cr_extracted_x, cr_extracted_y = cr_extracted_collection[key].finish()
         cr_extracted_2pe = np.interp(2, cr_extracted_x, cr_extracted_y)
@@ -145,6 +148,9 @@ def main():
             n_runs=len(trigger_threshold_collection),
             shower_primary_id=shower_primary_id,
             pulse_width=pulse_width,
+            mv_per_pe=mv_per_pe,
+            readout_noise_stddev=readout_noise_stddev,
+            digitisation_noise_stddev=digitisation_noise_stddev,
             trigger_threshold_mean=trigger_threshold_mean,
             trigger_threshold_std=trigger_threshold_std,
             pedestal_mean=pedestal_mean,

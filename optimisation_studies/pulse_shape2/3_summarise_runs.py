@@ -22,6 +22,9 @@ def main():
 
     shower_primary_id = first_row['shower_primary_id']
     pulse_width = metadata.pulse_width
+    mv_per_pe = metadata.mv_per_pe
+    readout_noise_stddev = metadata.readout_noise_stddev
+    digitisation_noise_stddev = metadata.digitisation_noise_stddev
     trigger_threshold = metadata.trigger_threshold
     pedestal = metadata.pedestal
     pulse_area = metadata.pulse_area
@@ -51,6 +54,9 @@ def main():
         path=h5_path,
         shower_primary_id=shower_primary_id,
         pulse_width=pulse_width,
+        mv_per_pe=mv_per_pe,
+        readout_noise_stddev=readout_noise_stddev,
+        digitisation_noise_stddev=digitisation_noise_stddev,
         trigger_threshold=trigger_threshold,
         pedestal=pedestal,
         pulse_area=pulse_area,

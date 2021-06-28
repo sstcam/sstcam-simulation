@@ -17,26 +17,26 @@ def main():
 
     create_directory(output_dir)
 
-    n_samples = 128
+    n_samples = 96
     spe = SiPMPrompt(opct=0.1, normalise_charge=False)
     camera_kwargs = dict(
         mapping=SSTCameraMapping(),
         photoelectron_spectrum=spe,
         n_waveform_samples=n_samples,
         continuous_readout_duration=n_samples,
-        readout_noise=GaussianNoise(stddev=0.15),
+        readout_noise=GaussianNoise(stddev=2),
         digitisation_noise=GaussianNoise(stddev=1),
     )
 
-    widths = np.linspace(2, 20, 10)
-    for width in widths:
-        sigma = width / 2.355
-        pulse = GaussianPulse(30, sigma, 60, mv_per_pe=4)
-        coupling = ACOffsetCoupling(pulse_area=pulse.area, spectrum_average=spe.average)
-        camera = Camera(**camera_kwargs, photoelectron_pulse=pulse, coupling=coupling)
+    for mv_per_pe in np.linspace(0.5, 4, 8):
+        for width in np.linspace(2, 20, 10):
+            sigma = width / 2.355
+            pulse = GaussianPulse(30, sigma, 60, mv_per_pe=mv_per_pe)
+            coupling = ACOffsetCoupling(pulse_area=pulse.area, spectrum_average=spe.average)
+            camera = Camera(**camera_kwargs, photoelectron_pulse=pulse, coupling=coupling)
 
-        name = f"width_{width:.2f}.pkl"
-        camera.save(join(output_dir, name))
+            name = f"width_{width:.2f}.pkl"
+            camera.save(join(output_dir, name))
 
 
 if __name__ == '__main__':
