@@ -1,7 +1,7 @@
 from scipy import interpolate
 from scipy.ndimage import correlate1d
 from ctapipe.instrument import CameraGeometry
-from ctapipe.image.extractor import neighbor_average_waveform
+from ctapipe.image.extractor import neighbor_average_waveform, extract_around_peak
 from astropy import units as u
 import numpy as np
 
@@ -35,7 +35,7 @@ class ChargeExtractor:
 
     def extract(self, waveforms, peak_index):
         cc = correlate1d(waveforms, self.cc_ref_y, mode='constant', origin=self.origin)
-        charge = cc[:, peak_index]
+        charge, _, = extract_around_peak(cc, peak_index, 1, 0, 1)
         return charge
 
     def obtain_peak_index_from_neighbours(self, waveforms):

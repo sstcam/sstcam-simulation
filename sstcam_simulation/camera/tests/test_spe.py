@@ -1,9 +1,12 @@
-from sstcam_simulation import Photoelectrons
+from sstcam_simulation import Photoelectrons, SSTCameraMapping
 from sstcam_simulation.camera.spe import single_gaussian, sipm_gentile_spe, \
-    SPESpectrum, optical_crosstalk_probability, SiPMDelayed
+    SPESpectrum, optical_crosstalk_probability, SiPMDelayed, SiPMReflectedOCT
 from ctapipe.core import non_abstract_children
 import numpy as np
 import pytest
+
+subclasses = non_abstract_children(SPESpectrum)
+subclasses.remove(SiPMReflectedOCT)
 
 
 def test_pmt():
@@ -52,7 +55,7 @@ def _get_result_photoelectrons(spectrum, rng):
     for iev in range(n_events):
         n_photoelectrons = 1
         photoelectrons = Photoelectrons(
-            pixel=np.zeros(n_photoelectrons, dtype=np.int),
+            pixel=np.zeros(n_photoelectrons, dtype=int),
             time=np.zeros(n_photoelectrons),
             charge=np.ones(n_photoelectrons),
             metadata=dict(test="test"),
@@ -63,7 +66,7 @@ def _get_result_photoelectrons(spectrum, rng):
     return np.array(pe), np.array(charge)
 
 
-@pytest.mark.parametrize("spectrum_class", non_abstract_children(SPESpectrum))
+@pytest.mark.parametrize("spectrum_class", subclasses)
 @pytest.mark.parametrize("normalise_charge", [True, False])
 def test_spe_spectra(spectrum_class, normalise_charge):
     rng = np.random.RandomState(seed=3)
@@ -82,7 +85,7 @@ def test_spe_spectra(spectrum_class, normalise_charge):
 def test_delayed():
     n_photoelectrons = 1000000
     photoelectrons = Photoelectrons(
-        pixel=np.zeros(n_photoelectrons, dtype=np.int),
+        pixel=np.zeros(n_photoelectrons, dtype=int),
         time=np.full(n_photoelectrons, 10.),
         charge=np.ones(n_photoelectrons),
     )
@@ -95,3 +98,20 @@ def test_delayed():
     assert (time > 10).all()
     np.testing.assert_allclose(time.mean(), 10 + 20, rtol=1e-2)
     np.testing.assert_allclose(time.std(), 20, rtol=1e-2)
+
+
+def test_neighbour():
+    mapping = SSTCameraMapping(n_pixels=16)
+    n_photoelectrons = 1000000
+    photoelectrons = Photoelectrons(
+        pixel=np.zeros(n_photoelectrons, dtype=int),
+        time=np.full(n_photoelectrons, 10.),
+        charge=np.ones(n_photoelectrons),
+    )
+
+    rng = np.random.RandomState(seed=1)
+
+    spectrum_template = SiPMReflectedOCT(mapping=mapping, reflected_scale=5)
+    result = spectrum_template.apply(photoelectrons, rng)
+    charge = result.get_charge_per_pixel(mapping.n_pixels)
+    assert (charge > 0).all()

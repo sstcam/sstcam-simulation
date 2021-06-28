@@ -1,6 +1,7 @@
 from ..data import get_data
 from dataclasses import dataclass
 import numpy as np
+from numba import njit
 
 __all__ = [
     "get_square_grid_neighbours",
@@ -41,6 +42,15 @@ def get_square_grid_neighbours(row, column, diagonal):
         neighbours = np.unique(np.sort(neighbours, axis=1), axis=0)
 
     return neighbours
+
+
+@njit
+def _shift_row_column(pixel_to_rowcol, start_pixel, shift_row, shift_column, max_row, max_col):
+    start_rowcol = pixel_to_rowcol[start_pixel]
+    row = start_rowcol[:, 0] + shift_row
+    col = start_rowcol[:, 1] + shift_column
+    valid = ((row >= 0) & (row <= max_row)) & ((col >= 0) & (col <= max_col))
+    return row[valid], col[valid], valid
 
 
 @dataclass(frozen=True)
@@ -93,6 +103,8 @@ class SSTCameraMapping:
         pix_y = table['ypix'][:n_pixels]  # Units: m
         pix_row = table['row'][:n_pixels]
         pix_col = table['col'][:n_pixels]
+        pix_row -= pix_row.min()
+        pix_col -= pix_col.min()
         pix_2_sp = table['superpixel'][:n_pixels]
         pix_neighbours = get_square_grid_neighbours(
             row=pix_row, column=pix_col, diagonal=True
@@ -132,6 +144,14 @@ class SSTCameraMapping:
             size=sp_size
         )
 
+        # Create conversion arrays between pixel and row/column
+        self.pixel_to_rowcol = np.column_stack([self.pixel.row, self.pixel.column])
+        n_rows = self.pixel.row.max() - self.pixel.row.min() + 1
+        n_columns = self.pixel.column.max() - self.pixel.column.min() + 1
+        self.rowcol_to_pixel = np.full((n_rows, n_columns), -1)
+        pix = np.arange(self.n_pixels)
+        self.rowcol_to_pixel[self.pixel_to_rowcol[:, 0], self.pixel_to_rowcol[:, 1]] = pix
+
     @staticmethod
     def _get_superpixel_coordinate(n_superpixels, superpixel, coordinate):
         superpixel_coord = np.zeros((n_superpixels, 4))
@@ -157,3 +177,17 @@ class SSTCameraMapping:
             Number of pixels in the simulated camera
         """
         self.__init__(n_pixels)
+
+    def shift_pixel(self, start_pixel, shift_row, shift_column):
+        row, column, valid = _shift_row_column(
+            self.pixel_to_rowcol,
+            start_pixel,
+            shift_row,
+            shift_column,
+            self.pixel.row.max(),
+            self.pixel.column.max()
+        )
+        pixel = self.rowcol_to_pixel[row, column]
+        not_in_corners = np.flatnonzero(pixel >= 0)
+        inside_camera = np.flatnonzero(valid)[not_in_corners]
+        return pixel[not_in_corners], inside_camera

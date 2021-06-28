@@ -62,7 +62,7 @@ class EventAcquisition:
         # Samples corresponding to the photoelectron time
         time = photoelectrons.time
         within = time < self.camera.continuous_readout_duration
-        sample = (time[within] / self.camera.continuous_readout_sample_width).astype(np.int)
+        sample = (time[within] / self.camera.continuous_readout_sample_width).astype(int)
 
         # Add photoelectrons to the readout array
         pixel = photoelectrons.pixel[within]

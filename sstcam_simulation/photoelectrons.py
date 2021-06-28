@@ -41,7 +41,7 @@ class Photoelectrons:
 
     def __post_init__(self):
         if self.initial is None:
-            self.initial = np.ones(self.pixel.size, dtype=np.bool)
+            self.initial = np.ones(self.pixel.size, dtype=bool)
 
     def __len__(self):
         return self.pixel.size
@@ -77,8 +77,8 @@ class Photoelectrons:
 
     def get_photoelectrons_per_pixel(self, n_pixels):
         """Integer count of photoelectrons in each photosensor pixel"""
-        pixel_photoelectrons = np.zeros(n_pixels, dtype=np.int)
-        pixel = self.pixel[self.initial == True]
+        pixel_photoelectrons = np.zeros(n_pixels, dtype=int)
+        pixel = self.pixel[self.initial]
         np.add.at(pixel_photoelectrons, pixel, 1)
         return pixel_photoelectrons
 
@@ -101,4 +101,4 @@ class Photoelectrons:
 
     @classmethod
     def empty(cls):
-        return cls(np.empty(0, dtype=np.int), np.empty(0), np.empty(0))
+        return cls(np.empty(0, dtype=int), np.empty(0), np.empty(0))

@@ -90,6 +90,9 @@ class Camera:
     def update_trigger_threshold(self, trigger_threshold):
         super().__setattr__('trigger_threshold', trigger_threshold)
 
+    def attach_metadata(self, name, value):
+        super().__setattr__(name, value)
+
     def save(self, path):
         """
         Save the camera object to disk

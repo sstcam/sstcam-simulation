@@ -22,17 +22,17 @@ def extract_trigger_efficiency(illumination, n_triggers):
     return x, mean, stderr
 
 
-def bin_charge_resolution(df, n_bins=40):
-    true = df['true'].values
-    min_ = true.min()
-    max_ = (true.max() // 500 + 1) * 500
+def bin_charge_resolution(df, n_bins=40, column='true'):
+    x = df[column].values
+    min_ = x.min()
+    max_ = (x.max() // 500 + 1) * 500
     bins = np.geomspace(min_, max_, n_bins)
     bins = np.append(bins, 10**(np.log10(bins[-1]) + np.diff(np.log10(bins))[0]))
-    df['bin'] = np.digitize(true, bins, right=True) - 1
+    df['bin'] = np.digitize(x, bins, right=True) - 1
 
     log = np.log10(bins)
     between = 10**((log[1:] + log[:-1]) / 2)
-    edges = np.repeat(bins, 2)[1:-1].reshape((bins.size-1 , 2))
+    edges = np.repeat(bins, 2)[1:-1].reshape((bins.size-1, 2))
     edge_l = edges[:, 0]
     edge_r = edges[:, 1]
     df['between'] = between[df['bin']]

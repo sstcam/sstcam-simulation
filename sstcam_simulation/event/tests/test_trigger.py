@@ -45,11 +45,11 @@ def test_extend_digital_trigger():
     n_samples = time_axis.size
     division = camera.continuous_readout_sample_division
     length = camera.digital_trigger_length * division
-    above_threshold = np.zeros((n_pixels, n_samples), dtype=np.bool)
+    above_threshold = np.zeros((n_pixels, n_samples), dtype=bool)
     above_threshold[0, 100:101] = True
     above_threshold[1, 200:500] = True
     above_threshold[1, 510:520] = True
-    trigger_readout_expected = np.zeros((n_pixels, n_samples), dtype=np.bool)
+    trigger_readout_expected = np.zeros((n_pixels, n_samples), dtype=bool)
     trigger_readout_expected[0, 100:101+length] = True
     trigger_readout_expected[1, 200:500+length] = True
     trigger_readout_expected[1, 510:520+length] = True
@@ -79,7 +79,7 @@ def test_get_digital_trigger_readout():
     continuous_readout[0, 200:500] = 0.1
     continuous_readout[1, 200:500] = 100
     continuous_readout[1, 510:520] = 100
-    trigger_readout_expected = np.zeros((n_superpixels, n_samples), dtype=np.bool)
+    trigger_readout_expected = np.zeros((n_superpixels, n_samples), dtype=bool)
     trigger_readout_expected[0, 100] = True
     trigger_readout_expected[0, 200] = True
     trigger_readout_expected[0, 510] = True
@@ -87,7 +87,7 @@ def test_get_digital_trigger_readout():
     assert np.array_equal(trigger_readout, trigger_readout_expected)
 
     # Add window
-    trigger_readout_expected = np.zeros((n_superpixels, n_samples), dtype=np.bool)
+    trigger_readout_expected = np.zeros((n_superpixels, n_samples), dtype=bool)
     trigger_readout_expected[0, 100:101+length] = True
     trigger_readout_expected[0, 200:201+length] = True
     trigger_readout_expected[0, 510:511+length] = True
@@ -100,14 +100,14 @@ def test_get_n_superpixel_triggers():
     trigger = NNSuperpixelAboveThreshold(camera=camera)
     n_superpixels = 2
     n_samples = trigger.camera.continuous_readout_time_axis.size
-    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
+    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=bool)
     trigger_readout[0, 10] = True
     trigger_readout[0, 15] = True
     trigger_readout[1, 100] = True
     trigger_readout[1, 150] = True
     trigger_readout[1, 200] = True
     n_triggers = trigger.get_n_superpixel_triggers(trigger_readout)
-    assert np.array_equal(n_triggers, np.array([2, 3], dtype=np.int))
+    assert np.array_equal(n_triggers, np.array([2, 3], dtype=int))
 
 
 def test_get_backplane_trigger():
@@ -116,13 +116,13 @@ def test_get_backplane_trigger():
     n_superpixels = camera.mapping.n_superpixels
     n_samples = camera.continuous_readout_time_axis.size
     csample = camera.get_continuous_readout_sample_from_time
-    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
+    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=bool)
     trigger_time, trigger_pair = trigger.get_backplane_trigger(trigger_readout)
     assert trigger_time.shape == (0,)
     assert trigger_pair.shape == (0, 2)
 
     # No overlap (after sampling)
-    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
+    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=bool)
     trigger_readout[0, csample(1.00):csample(2.00)] = True
     trigger_readout[0, csample(10.0):csample(12.0)] = True
     trigger_readout[1, csample(11.5):csample(13.0)] = True
@@ -132,7 +132,7 @@ def test_get_backplane_trigger():
     assert trigger_time.shape == (0,)
     assert trigger_pair.shape == (0, 2)
 
-    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
+    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=bool)
     trigger_readout[0, csample(1.00):csample(2.00)] = True
     trigger_readout[0, csample(10.0):csample(12.5)] = True
     trigger_readout[1, csample(11.5):csample(13.0)] = True
@@ -149,7 +149,7 @@ def test_get_backplane_trigger():
     trigger = NNSuperpixelAboveThreshold(camera=camera)
     n_superpixels = camera.mapping.n_superpixels
     n_samples = camera.continuous_readout_time_axis.size
-    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=np.bool)
+    trigger_readout = np.zeros((n_superpixels, n_samples), dtype=bool)
     trigger_readout[0, 10:20] = True
     trigger_readout[0, 100:125] = True
     trigger_time, trigger_pair = trigger.get_backplane_trigger(trigger_readout)

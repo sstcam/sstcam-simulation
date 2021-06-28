@@ -60,7 +60,7 @@ def test_comparison_to_ctapipe_true_image():
     for event in source:
         for telid, tel in event.mc.tel.items():
             key = (event.index['event_id'], telid)
-            ctapipe_images[key] = tel.true_image.astype(np.int)
+            ctapipe_images[key] = tel.true_image.astype(int)
 
     reader = SimtelReader(path, disable_remapping=True, only_triggered_events=True)
     photoelectron_images = {}
