@@ -1,6 +1,6 @@
 from sstcam_simulation.data import get_data
 from sstcam_simulation.utils.window_durham_needle import WindowDurhamNeedle
-from sstcam_simulation.utils.sipm.pde import PDEvsWavelength
+from sstcam_simulation.utils.sipm.pde import PDEvsWavelength, read_lct5_resin_coated
 import numpy as np
 import pandas as pd
 from numba import njit
@@ -30,8 +30,10 @@ def _pixel_active_solid_angle_nb(pixel_diameter, focal_length):
 @njit(fastmath=True)
 def _integrate(x, y, x_min, x_max):
     within = (x >= x_min) & (x <= x_max)
+    # x_within = x[within]
     y_within = y[within]
     return np.sum(y_within) - 0.5 * (y_within[0] + y_within[-1])
+    # return np.trapz(y_within, x_within)
 
 
 class CameraEfficiency:
@@ -151,6 +153,17 @@ class CameraEfficiency:
         return self._nsb_diff_flux_at_camera * self.window_transmissivity
 
     @property
+    def _nsb_flux_at_pixel(self):
+        wl_min = u.Quantity(200, u.nm)
+        wl_max = u.Quantity(999, u.nm)
+        return self._integrate_nsb(self._nsb_diff_flux_at_pixel, wl_min, wl_max)
+
+    @property
+    def _nsb_photon_rate_at_pixel(self):
+        rate = self._nsb_flux_at_pixel * self._pixel_active_solid_angle * self.mirror_area
+        return rate
+
+    @property
     def _nsb_diff_flux_inside_pixel(self):
         return self._nsb_diff_flux_at_pixel * self.pde
 
@@ -207,6 +220,20 @@ class CameraEfficiency:
     @property
     def nominal_nsb_rate(self):
         return self.get_scaled_nsb_rate(u.Quantity(0.24, NSB_FLUX_UNIT))
+
+    @property
+    def nominal_nsb_photon_rate(self):
+        return self.nominal_nsb_rate / self._nsb_rate_inside_pixel * self._nsb_photon_rate_at_pixel
+
+    def get_nsb_photon_rate_for_led(self, nsb_pe_rate, led_wavelength):
+        pde_at_wavelength = self.pde[self.wavelength == led_wavelength]
+        nsb_photon_rate = nsb_pe_rate / pde_at_wavelength
+        return nsb_photon_rate
+
+    def get_led_nsb_ratio(self, led_wavelength):
+        """Ratio between photons observed from NSB spectrum, and photons observed from LED"""
+        pde_at_wavelength = self.pde[self.wavelength == led_wavelength]
+        return self._nsb_flux_at_pixel / self._nsb_flux_inside_pixel * pde_at_wavelength
 
     @property
     def _moonlight_diff_flux_on_ground(self):
@@ -274,8 +301,20 @@ class CameraEfficiency:
         return self._cherenkov_diff_flux_at_camera * self.window_transmissivity
 
     @property
+    def _cherenkov_flux_at_pixel(self):
+        wl_min = u.Quantity(200, u.nm)
+        wl_max = u.Quantity(999, u.nm)
+        return self._integrate_cherenkov(self._cherenkov_diff_flux_at_pixel, wl_min, wl_max)
+
+    @property
     def _cherenkov_diff_flux_inside_pixel(self):
         return self._cherenkov_diff_flux_at_pixel * self.pde
+
+    @property
+    def _cherenkov_flux_inside_pixel(self):
+        wl_min = u.Quantity(200, u.nm)
+        wl_max = u.Quantity(999, u.nm)
+        return self._integrate_cherenkov(self._cherenkov_diff_flux_inside_pixel, wl_min, wl_max)
 
     @property
     def n_cherenkov_photoelectrons(self):
@@ -284,6 +323,11 @@ class CameraEfficiency:
             u.Quantity(200, u.nm),
             u.Quantity(999, u.nm)
         ) * self.pixel_fill_factor
+
+    def get_led_cherenkov_ratio(self, led_wavelength):
+        """Ratio between photons observed from Cherenkov spectrum, and photons observed from LED"""
+        pde_at_wavelength = self.pde[self.wavelength == led_wavelength]
+        return self._cherenkov_flux_at_pixel / self._cherenkov_flux_inside_pixel * pde_at_wavelength
 
     @property
     def camera_cherenkov_pde(self):
@@ -363,6 +407,79 @@ class CameraEfficiency:
 
         # Read scalar quantities
         with open(PROD4_PATH_QUAN, 'r') as stream:
+            quantities = yaml.safe_load(stream)
+
+        pixel_diameter = u.Quantity(quantities["pixel_diameter"], 'm')
+        pixel_fill_factor = quantities["pixel_fill_factor"]
+        focal_length = u.Quantity(quantities["focal_length"], 'm/radian')
+        mirror_area = u.Quantity(quantities["mirror_area"], 'm2')
+
+        return cls(
+            pixel_diameter=pixel_diameter,
+            pixel_fill_factor=pixel_fill_factor,
+            focal_length=focal_length,
+            mirror_area=mirror_area,
+            telescope_transmissivity=telescope_transmissivity,
+            mirror_reflectivity=mirror_reflectivity,
+            window_transmissivity=window_transmissivity,
+            pde=pde,
+        )
+
+    @classmethod
+    def from_sstcam_lvr3_uncoated(cls, incidence_angle=0):
+        """0 incidence angle"""
+
+        # Read telescope arrays TODO: update
+        df_tel = pd.read_csv(PROD4_PATH_TEL)
+        telescope_transmissivity = df_tel['telescope_transmissivity'].values
+        mirror_reflectivity = df_tel['mirror_reflectivity'].values
+
+        # Read camera window transmissivity
+        window = WindowDurhamNeedle()
+        window_transmissivity = window.interpolate(incidence_angle)
+
+        # Read camera pde
+        pde_vs_wavelength = PDEvsWavelength.LVR3_75um_6mm()
+        pde = pde_vs_wavelength.interpolate(incidence_angle)
+
+        # Read scalar quantities
+        with open(SSTCAM_PATH_QUAN, 'r') as stream:
+            quantities = yaml.safe_load(stream)
+
+        pixel_diameter = u.Quantity(quantities["pixel_diameter"], 'm')
+        pixel_fill_factor = quantities["pixel_fill_factor"]
+        focal_length = u.Quantity(quantities["focal_length"], 'm/radian')
+        mirror_area = u.Quantity(quantities["mirror_area"], 'm2')
+
+        return cls(
+            pixel_diameter=pixel_diameter,
+            pixel_fill_factor=pixel_fill_factor,
+            focal_length=focal_length,
+            mirror_area=mirror_area,
+            telescope_transmissivity=telescope_transmissivity,
+            mirror_reflectivity=mirror_reflectivity,
+            window_transmissivity=window_transmissivity,
+            pde=pde,
+        )
+
+    @classmethod
+    def from_sstcam_lct5_resin(cls):
+        """0 incidence angle"""
+
+        # Read telescope arrays TODO: update
+        df_tel = pd.read_csv(PROD4_PATH_TEL)
+        telescope_transmissivity = df_tel['telescope_transmissivity'].values
+        mirror_reflectivity = df_tel['mirror_reflectivity'].values
+
+        # Read camera window transmissivity
+        window = WindowDurhamNeedle()
+        window_transmissivity = window.df['0_measured'].values
+
+        # Read camera pde
+        pde = read_lct5_resin_coated()
+
+        # Read scalar quantities
+        with open(SSTCAM_PATH_QUAN, 'r') as stream:
             quantities = yaml.safe_load(stream)
 
         pixel_diameter = u.Quantity(quantities["pixel_diameter"], 'm')
