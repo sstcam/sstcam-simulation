@@ -1,9 +1,11 @@
 name: sstcam-simulation
 channels:
+  - defaults
   - conda-forge
   - cta-observatory
 dependencies:
   - anaconda-client
+  - pip
   - numpy
   - scipy
   - astropy

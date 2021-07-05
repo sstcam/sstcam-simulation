@@ -4,9 +4,22 @@ from astropy import units as u
 import pytest
 
 
+def obtain_prod4():
+    try:
+        return CameraEfficiency.from_prod4()
+    except FileNotFoundError:
+        return None
+
+
+pytestmark = pytest.mark.skipif(
+    obtain_prod4() is None,
+    reason="Tests require additional files"
+)
+
+
 @pytest.fixture(scope="module")
 def prod4_cam_eff():
-    return CameraEfficiency.from_prod4()
+    return obtain_prod4()
 
 
 def test_prod4_pixel_active_solid_angle():
