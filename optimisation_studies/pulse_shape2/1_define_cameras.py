@@ -28,8 +28,7 @@ def main():
         digitisation_noise=GaussianNoise(stddev=1),
     )
 
-    # for mv_per_pe in [0.5, 0.8, 1.1, 1.375, 2.25, 3.125, 4]:
-    for mv_per_pe in [0.8, 1.1]:
+    for mv_per_pe in [0.5, 0.8, 1.1, 1.375, 2.25, 3.125, 4]:
         for width in [2, 4,  6, 8, 10, 14, 20]:
             sigma = width / 2.355
             pulse = GaussianPulse(30, sigma, 60, mv_per_pe=mv_per_pe)

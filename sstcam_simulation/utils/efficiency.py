@@ -1,6 +1,6 @@
 from sstcam_simulation.data import get_data
 from sstcam_simulation.utils.window_durham_needle import WindowDurhamNeedle
-from sstcam_simulation.utils.sipm.pde import PDEvsWavelength, read_lct5_resin_coated
+from sstcam_simulation.utils.sipm.pde import PDEvsWavelength, read_lct5_resin_coated, read_prototype
 import numpy as np
 import pandas as pd
 from numba import njit
@@ -477,6 +477,42 @@ class CameraEfficiency:
 
         # Read camera pde
         pde = read_lct5_resin_coated()
+
+        # Read scalar quantities
+        with open(SSTCAM_PATH_QUAN, 'r') as stream:
+            quantities = yaml.safe_load(stream)
+
+        pixel_diameter = u.Quantity(quantities["pixel_diameter"], 'm')
+        pixel_fill_factor = quantities["pixel_fill_factor"]
+        focal_length = u.Quantity(quantities["focal_length"], 'm/radian')
+        mirror_area = u.Quantity(quantities["mirror_area"], 'm2')
+
+        return cls(
+            pixel_diameter=pixel_diameter,
+            pixel_fill_factor=pixel_fill_factor,
+            focal_length=focal_length,
+            mirror_area=mirror_area,
+            telescope_transmissivity=telescope_transmissivity,
+            mirror_reflectivity=mirror_reflectivity,
+            window_transmissivity=window_transmissivity,
+            pde=pde,
+        )
+
+    @classmethod
+    def from_sstcam_prototype_sipm(cls):
+        """0 incidence angle"""
+
+        # Read telescope arrays TODO: update
+        df_tel = pd.read_csv(PROD4_PATH_TEL)
+        telescope_transmissivity = df_tel['telescope_transmissivity'].values
+        mirror_reflectivity = df_tel['mirror_reflectivity'].values
+
+        # Read camera window transmissivity
+        window = WindowDurhamNeedle()
+        window_transmissivity = window.df['0_measured'].values
+
+        # Read camera pde
+        pde = read_prototype()
 
         # Read scalar quantities
         with open(SSTCAM_PATH_QUAN, 'r') as stream:

@@ -89,3 +89,12 @@ def read_lct5_resin_coated():
     pde_interp[pde_interp < 0] = 0
     return pde_interp * 0.01
 
+
+def read_prototype():
+    path = "/Users/Jason/Software/sstcam-simulation/sstcam_simulation/data/datasheet/efficiency/pde_prototype.csv"
+    wavelength, pde = np.loadtxt(path, delimiter=', ', unpack=True)
+    wavelength_interp = np.arange(200, 1000)
+    f = interp1d(wavelength, pde, fill_value="extrapolate")
+    pde_interp = f(wavelength_interp)
+    pde_interp[pde_interp < 0] = 0
+    return pde_interp
