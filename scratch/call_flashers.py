@@ -1,6 +1,7 @@
 import sys
-sys.path.append(r'/home/sheridan/sstcam-simulation')
 
+sys.path.append(r'/home/sheridan/sstcam-simulation') # change this to your appropriate local root to run this code
+#import /home/sheridan/sstcam-simulation/sstcam_simulation
 
 from sstcam_simulation.event.source import PhotoelectronSource
 from sstcam_simulation.camera import Camera
@@ -1069,8 +1070,13 @@ def get_fractional_err_flashers(nsb_MHz,nsb_pedestal_charge,illumination,flasher
     readout = acquisition.get_continuous_readout(pe)
     waveform = acquisition.get_sampled_waveform(readout)
 
-    # Charge Extraction
-    measured_charge = waveform.sum(1)
+    # Charge Extraction - old method - integrate whole waveform - used in plots prior to 31st July 2021
+    # measured_charge = waveform.sum(1)
+
+    # Charge Extraction New method - integrate around the peak +/- 10 ns
+    #
+    extractor = performance.ChargeExtractor.from_camera(camera)
+    measured_charge=extractor.extract(waveform,50)
     measured_charge=measured_charge-nsb_pedestal_charge
 
     fractional_error=(measured_charge-true_charge)/true_charge
@@ -1126,12 +1132,12 @@ def PlotFractionalErr(no_of_nsb_obs,no_of_flashes, flasher_illuminations, nsb_ra
     return
 
 flasher_illuminations=[100]
-print ("PlotFractionalErr 100 pe")
-PlotFractionalErr(no_of_nsb_obs,no_of_flashes, flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err)
+#print ("PlotFractionalErr 100 pe")
+#PlotFractionalErr(no_of_nsb_obs,no_of_flashes, flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err)
 
-flasher_illuminations=[200]
-print ("PlotFractionalErr pe")
-PlotFractionalErr(no_of_nsb_obs,no_of_flashes, flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err)
+#flasher_illuminations=[200]
+#print ("PlotFractionalErr pe")
+#PlotFractionalErr(no_of_nsb_obs,no_of_flashes, flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err)
 
 
 # no_of_runs - how many callibrations to attempt - we should achieve target_fractional_err consistently in this consecutive number of calibration runs
@@ -1169,5 +1175,358 @@ def GetNumberOfFlashesToReachTargetFractionalError(no_of_flashes_step,no_of_cons
 
             print("Illumination," + str(flasher_illumination) + ",NSB," + str(nsb_MHz) + ",Target Fractional error," + str(target_fractional_err) + " achieved for " + str(no_of_consistent_runs) + " runs in " + str(no_of_flashes) + " flashes")
     return
-print ("GetNumberOfFlashesToReachTargetFractionalError")
-GetNumberOfFlashesToReachTargetFractionalError(no_of_flashes_step,no_of_consistent_runs,target_fractional_err,no_of_nsb_obs,flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err)
+#print ("GetNumberOfFlashesToReachTargetFractionalError")
+#GetNumberOfFlashesToReachTargetFractionalError(no_of_flashes_step,no_of_consistent_runs,target_fractional_err,no_of_nsb_obs,flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err)
+
+# 26 July 21 - same as PlotFractionalErr above but use common obtain_pedestal
+import performance
+def PlotFractionalErr(no_of_nsb_obs,no_of_flashes, flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err):
+    # Define the camera
+    camera = Camera(
+        mapping=SSTCameraMapping(n_pixels=1),  # Only need a single pixel
+        continuous_readout_duration=500,  # Only need a single-waveform's worth of readout
+        n_waveform_samples=500,
+    )
+    extractor=performance.ChargeExtractor()
+    for flasher_illumination in flasher_illuminations:
+        print("Flasher Illumination " + str(flasher_illumination) + " p.e. ")
+        for nsb_MHz in nsb_rates:
+            print("NSB  " + str(nsb_MHz) + " MHz ")
+            # nsb_pedestal_charge=get_nsb_pedestal(nsb_MHz, no_of_nsb_obs) # comment out stop using whole waveform integration
+            nsb_pedestal_charge = performance.pedestal.obtain_pedestal(camera,extractor,nsb_MHz)
+            fractional_err_charge_moving_avgs=[]
+            event_nos=[]
+
+            event_nos,fractional_err_charge_moving_avgs=get_fractional_err_flashers_moving_avg(no_of_flashes, nsb_MHz, nsb_pedestal_charge, flasher_illumination,
+                                                   pulse_width, illumination_err, pulse_width_err)
+
+            plt.plot(event_nos, fractional_err_charge_moving_avgs, '-', label="Illumination " + str(flasher_illumination) + " p.e.  NSB " + str(nsb_MHz) + " MHz ")
+    plt.legend(loc="best")
+    plt.xlabel("Event Number ")
+    plt.ylabel("Fractional Error - Running MC and TC Avg - (MC-TC)/TC")
+    plt.show()
+
+    return
+
+#flasher_illuminations=[100]
+#print ("PlotFractionalErr 100 pe - common pedestal code")
+#PlotFractionalErr(no_of_nsb_obs,no_of_flashes, flasher_illuminations, nsb_rates,pulse_width, illumination_err, pulse_width_err)
+
+# 30th July 2021 - simulate the drop in illumination due to over-voltage drop for nsb of a given rate in MHz, illumination is p.e.
+# Define constants for run that follows
+flasher_illuminations=[100,200] # range of illuminations to try in p.e.
+pulse_width=4.5 # flasher pulse width ns
+illumination_err=0.2 # flasher illumination error
+pulse_width_err=0.035 # flasher pulse width error
+no_of_nsb_obs=20 # How many NSB samples to take, take average of these and subtract as a pedestal
+
+def get_illumination_for_nsb(illumination,nsb_MHz):
+    percentage_drop_per_MHz=0.016 # from Jon Lapington Laser Tests of simulated NSB effect on a laser pulse amplitude
+    illumination=illumination-(illumination * (nsb_MHz * percentage_drop_per_MHz / 100))
+    return illumination
+
+# Simulate linear NSB at a given time in seconds. Initial_nsb_rate is nsb at time zero. All rates in MHz.
+def get_linear_nsb_rate(time_s, initial_nsb_MHz, nsb_MHz_rate_of_change_per_s):
+    nsb_MHz = initial_nsb_MHz + (nsb_MHz_rate_of_change_per_s*time_s)
+    return nsb_MHz
+
+# time_s - Time in seconds that we want NSB for
+# min_nsb_MHz - lower bound of NSB range
+# max_nsb_MHz - upper bound of NSB range
+# period_s - Time in seconds for sin waveform to repeat
+
+def get_sin_nsb_rate(time_s,min_nsb_MHz, max_nsb_MHz,rise_time_s):
+    nsb_MHz=min_nsb_MHz+(0.5*(max_nsb_MHz-min_nsb_MHz))*(np.sin(1.5*np.pi+np.pi/rise_time_s*time_s)+1) # repeats indefinitely , wavelength 2PI start at min value
+
+    return nsb_MHz
+
+# test get nsb sin rate
+# time_s=0
+# min_nsb_MHz=100
+# max_nsb_MHz=200
+# rise_time_s=50
+# for time_s in range(0,200,1):
+#     print (str(time_s) + " " + str(get_sin_nsb_rate(time_s,min_nsb_MHz, max_nsb_MHz,rise_time_s)))
+#     get_sin_nsb_rate(time_s, min_nsb_MHz, max_nsb_MHz, rise_time_s)
+
+
+# Measured charge is nsb pedestal corrected and includes nsb charge at given rate
+# Allow for NSB rate of change
+# readout_time_s - Time in run at which flasher calibration starts
+# no_of_flashes - this is within a single calibration run - there will be multiple calibration runs abritarily spaced in time
+# flasher_rate_Hz - 5-20 typically
+# nsb_MHz_at_time_zero - NSB at start of observing - we will adjust this depending on readout_time_s and nsb rate of change - linear increase
+# nsb_rate_of_change_MHz_s - NSB rate of change per second
+# nsb_pedestal_charge - This any pedestal we want - try first with pedestal at time zero
+# flasher_illumination_time_zero - we reduce this depending on time and NSB to simulate overvoltage drop with NSB
+def get_flasher_measured_and_true(readout_time_s, no_of_flashes, flasher_rate_Hz,nsb_MHz_at_time_zero, nsb_rate_of_change_MHz_s,nsb_pedestal_charge,flasher_illumination_time_zero,pulse_width,illumination_err, pulse_width_err):
+
+    measured_charges=[]
+    true_charges=[]
+    nsbs=[]
+    time_between_flashes_s=1/flasher_rate_Hz
+
+    for x in range(no_of_flashes): # allow also for change in NSB while flasher calibration going on - probably not a significant effect but nice to include for star in pixel sim
+        nsb_MHz=get_linear_nsb_rate(readout_time_s,nsb_MHz_at_time_zero,nsb_rate_of_change_MHz_s) # NSB is changing even when calibration run
+        nsbs.append(nsb_MHz)
+        flasher_illumination=get_illumination_for_nsb(flasher_illumination_time_zero,nsb_MHz) # The true initial flasher illumination is changing depending on this changed NSB
+        true_charges.append(flasher_illumination)
+        fractional_err, measured_charge, true_charge = get_fractional_err_flashers(nsb_MHz, nsb_pedestal_charge, flasher_illumination, pulse_width, illumination_err, pulse_width_err)
+        measured_charges.append(measured_charge) # pedestal corrected includes nsb
+        readout_time_s+=time_between_flashes_s # everything is driven by time offset from a zero point at start of  observations
+
+    return np.mean(measured_charges), np.mean(true_charges), np.mean(nsbs)
+
+# flasher_rate_Hz - typically 5-20
+#
+def get_calibration_coeffients(nsb_MHz_at_time_zero,flasher_illumination_time_zero,nsb_rate_of_change_MHz_s,flasher_rate_Hz,no_of_flashes_in_calibration_step,interval_between_calibration_s):
+
+    # Goal - what is effect of flasher rate, number of flashes and varying NSB rate on determining calibration coefficient and miscalibration factor (defined below)
+    # Overall steps - a flasher calibration run can have a varying number of flashes and rate:
+    # 0 - Take one initial pedestal as the start NSB t=0
+    # 1 - Get original pedestal corrected (OPC) charge for flasher calibration run at t=0 ( assume no variation NSB here )
+    # 2 - Measure reduced pedestal corrected charge (MRPC) at any time t and simulate reduced measured illumination due to increasing NSB at a given rate, calibration coefficient
+    #     CC=OPC/RPC
+    # 3 - At any NSB we define a true pedestal corrected (TPC) charge with no statistical errors, this is the drift of OPC and RPC would be same as OPC if perfect.
+    #     TPC-RPC is the miscalibration factor (MF)
+    # 4 - Determine mean, standard deviation and root mean square error on the CC and MCF
+
+    extractor=performance.ChargeExtractor.from_camera(camera)
+    nsb_pedestal_charge = performance.pedestal.obtain_pedestal(camera, extractor, nsb_MHz_at_time_zero) # step 0
+
+
+    # how many seconds run to get to 1000 MHz NSB ?
+    observing_duration_s=1000 / nsb_rate_of_change_MHz_s
+    calibration_run_duration_s= no_of_flashes_in_calibration_step / flasher_rate_Hz
+
+    running_time=0
+    # place calibration runs roughly into observing duration
+    #
+    NSBs=[]
+    MRPCs=[]
+    TPCs=[]
+    while running_time < observing_duration_s:
+
+        MRPC,TPC,NSB=get_flasher_measured_and_true(running_time, no_of_flashes_in_calibration_step, flasher_rate_Hz, \
+                               nsb_MHz_at_time_zero,nsb_rate_of_change_MHz_s, nsb_pedestal_charge, flasher_illumination_time_zero, pulse_width, \
+                               illumination_err, pulse_width_err) # step 2 - avg reduced pedestal corrected charge with increasing NSB which also allows for NSB change within run
+
+        NSBs.append(NSB)
+        MRPCs.append(MRPC) # collect the mean pedestal corrected measured charge from a calibration run ( consisting of many flashes )
+        TPCs.append(TPC) # collect the mean true charge which is the reduced flasher illumination to simulate reduced overvolatge as a result of NSB
+        #print('Time ' + str(running_time) + ' Measured '+ str(RPC) + ' True ' + str(TPC))
+
+        running_time=running_time + calibration_run_duration_s + interval_between_calibration_s
+
+    return MRPCs, TPCs, NSBs
+
+
+
+nsb_MHz_at_time_zero=50
+flasher_illumination_time_zero=100
+nsb_rate_of_change_MHz_s=0.2
+flasher_rate_Hz=10
+flasher_rates_Hz=[20]
+no_of_flashes_in_calibration_step=10
+interval_between_calibration_s=600
+no_of_calibration_iterations=10
+
+
+def get_stats(bin_NSB,all_MPRCs, all_TPCs, all_NSBs,output_file="/home/sheridan/Documents/SSTCAM/TO PRESENT/JON_L_LASER_INVESTIGATION/log.txt"):
+    # effectively binning by NSB to identify the individual calibration run and re-bin by this for stats
+
+    MPRC_binned_NSB = []
+    TPC_binned_NSB = []
+
+    for MPRC, TPC, NSB in zip(all_MPRCs, all_TPCs, all_NSBs):
+        if NSB == bin_NSB:
+            MPRC_binned_NSB.append(MPRC)
+            TPC_binned_NSB.append(TPC)
+    residuals = []
+    for measured_charge, true_charge in zip(MPRC_binned_NSB, TPC_binned_NSB):
+        residuals.append((measured_charge - true_charge) ** 2)
+    RMSE = np.sqrt(np.mean(residuals))
+    # Get stats
+    with open(output_file, 'a') as f:
+        print('NSB ' + str(bin_NSB) + " RMSE " + str(RMSE) + " MPRC mean & std dev " + \
+          str(np.mean(MPRC_binned_NSB)) + "," + str(np.std(MPRC_binned_NSB)) + \
+          " TPC mean & std dev " + str(np.mean(TPC_binned_NSB)) + "," + \
+          str(np.std(TPC_binned_NSB)),file=f )
+    f.close()
+    return np.mean(MPRC_binned_NSB), np.std(MPRC_binned_NSB), RMSE,np.mean(TPC_binned_NSB)
+
+# This assumes a linear rate of change increasing NSB
+#
+def run_calibration(output_file,no_of_calibration_iterations,nsb_MHz_at_time_zero,flasher_illumination_time_zero,nsb_rate_of_change_MHz_s,flasher_rate_Hz,no_of_flashes_in_calibration_step,interval_between_calibration_s):
+
+    all_MPRCs=[]
+    all_TPCs=[]
+    all_NSBs=[]
+    for x in range(no_of_calibration_iterations):
+        MRPCs, TPCs, NSBs=get_calibration_coeffients(nsb_MHz_at_time_zero,flasher_illumination_time_zero,nsb_rate_of_change_MHz_s,\
+                                                     flasher_rate_Hz,no_of_flashes_in_calibration_step,interval_between_calibration_s)
+        all_MPRCs+=MRPCs
+        all_TPCs+=TPCs
+        all_NSBs+=NSBs
+
+    # dervive stats from global lists
+    np_all_NSBs=np.array(all_NSBs)
+
+    # Determine means, root mean square error and standard deviations for plot / print
+    #print ("Flasher rate Hz " + str(flasher_rate_Hz))
+
+    mean_MPRCs=[]
+    std_dev_MPRCs=[]
+    RMSEs=[]
+    mean_NSBs=[]
+    mean_TPCs=[]
+    for bin_nsb in np.unique(np_all_NSBs):
+        mean_MPRC,std_dev_MPRC,RMSE, mean_TPC=get_stats(bin_nsb, all_MPRCs, all_TPCs, all_NSBs,output_file)
+        mean_MPRCs.append(mean_MPRC)
+        std_dev_MPRCs.append(std_dev_MPRC)
+        RMSEs.append(RMSE)
+        mean_NSBs.append(bin_nsb)
+        mean_TPCs.append(mean_TPC)
+        #print ("Mean MPRC " + str(mean_MPRC))
+        #print ("Std dev MPRC " + str(std_dev_MPRC))
+        #print ("RMSE " + str(RMSE))
+
+    return mean_MPRCs,std_dev_MPRCs,RMSEs,mean_NSBs, mean_TPCs
+
+MPRCs=[]
+std_dev_MPRCs=[]
+RMSEs=[]
+mean_NSBs=[]
+no_of_calibration_iterations=10
+
+def new_plt(plt_title, x_label,y_label):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+    ax1.set_xlabel(x_label)
+    ax1.set_ylabel(y_label)
+    ax1.title.set_text(plt_title)
+
+
+
+    return ax1
+
+def plotnormal(ax1, x_array,y_array,series_label):
+    ax1.plot(x_array, y_array, '-', label=series_label)
+    plt.legend(loc="best")
+    return
+
+
+def show_plt(ax1):
+    plt.show()
+    return
+
+
+
+def PrintParams(output_file,no_of_calibration_iterations,nsb_MHz_at_time_zero,flasher_illumination_time_zero,nsb_rate_of_change_MHz_s,flasher_rate_Hz,no_of_flashes_in_calibration_step,interval_between_calibration_s):
+    with open(output_file, 'a') as f:
+        print ("no_of_calibration_iterations      " + str (no_of_calibration_iterations), file=f)
+        print ("nsb_MHz_at_time_zero              " + str(nsb_MHz_at_time_zero), file=f)
+        print ("flasher_illumination_time_zero    " + str(flasher_illumination_time_zero), file=f)
+        print ("nsb_rate_of_change_MHz_s          " + str(nsb_rate_of_change_MHz_s), file=f)
+        print ("flasher_rate_Hz                   " + str(flasher_rate_Hz), file=f)
+        print ("no_of_flashes_in_calibration_step " + str(no_of_flashes_in_calibration_step), file=f)
+        print ("interval_between_calibration_s    " + str(interval_between_calibration_s), file=f)
+    f.close()
+    return
+
+def PltVaryFlasherRateWithTrueIllumination():
+
+    # Vary Flasher Rate - plot against True illumination which excludes NSB and allows for over-voltage reduction
+    ax1=new_plt("Vary Flasher Rate - Measured Illumination vs True Illumination", "True charge (p.e.)", "Measured charge (p.e.)")
+    nsb_MHz_at_time_zero=50
+    flasher_illumination_time_zero=100
+    nsb_rate_of_change_MHz_s=0.2
+    #flasher_rate_Hz
+    no_of_flashes_in_calibration_step=100
+    interval_between_calibration_s=600
+    no_of_calibration_iterations=100
+    SEDLabel = "VaryFlasherRate_5_20_Hz_Initial_NSB_50MHz_100Flashes"
+    output_file="/home/sheridan/Documents/SSTCAM/TO PRESENT/JON_L_LASER_INVESTIGATION/" + SEDLabel + '.log'
+    for flasher_rate_Hz in [5,10,15,20]:
+        print("Flasher rate " + str(flasher_rate_Hz) + " Hz " + " " + str(no_of_calibration_iterations) + " runs")
+        PrintParams(output_file,no_of_calibration_iterations, nsb_MHz_at_time_zero, flasher_illumination_time_zero,
+                    nsb_rate_of_change_MHz_s, flasher_rate_Hz, no_of_flashes_in_calibration_step,
+                    interval_between_calibration_s)
+
+
+        mean_MPRCs,std_dev_MPRCs,RMSEs,mean_NSBs,mean_TPCs=run_calibration(output_file, no_of_calibration_iterations,nsb_MHz_at_time_zero,flasher_illumination_time_zero,nsb_rate_of_change_MHz_s,flasher_rate_Hz,no_of_flashes_in_calibration_step,interval_between_calibration_s)
+        plotnormal(ax1, mean_TPCs,mean_MPRCs,str(flasher_rate_Hz) + " Hz")
+
+
+    fname = "/home/sheridan/Documents/SSTCAM/TO PRESENT/JON_L_LASER_INVESTIGATION/" + SEDLabel + '.png'
+    plt.savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait',  format=None,
+                transparent=False, bbox_inches=None, pad_inches=0.1)
+
+    #show_plt(ax1)
+    return
+
+PltVaryFlasherRateWithTrueIllumination()
+
+
+def PltVaryNSBRateWithTrueIllumination():
+
+    # Vary Flasher Rate - plot against True illumination which excludes NSB and allows for over-voltage reduction
+    ax1=new_plt("Vary NSB rate of change - Measured Illumination vs True Illumination", "True charge (p.e.)", "Measured charge (p.e.)")
+    nsb_MHz_at_time_zero=50
+    flasher_illumination_time_zero=100
+
+    #flasher_rate_Hz
+    no_of_flashes_in_calibration_step=100
+    interval_between_calibration_s=600
+    no_of_calibration_iterations=100
+    flasher_rate_Hz=10
+    SEDLabel = "VaryNSB_ROC_Initial_NSB_50MHz_100_Flashes"
+    output_file="/home/sheridan/Documents/SSTCAM/TO PRESENT/JON_L_LASER_INVESTIGATION/" + SEDLabel + '.log'
+
+    for nsb_rate_of_change_MHz_s in [0.2,0.4,0.6,0.8]:
+        PrintParams(output_file,no_of_calibration_iterations, nsb_MHz_at_time_zero, flasher_illumination_time_zero,
+                    nsb_rate_of_change_MHz_s, flasher_rate_Hz, no_of_flashes_in_calibration_step,
+                    interval_between_calibration_s)
+
+
+        mean_MPRCs,std_dev_MPRCs,RMSEs,mean_NSBs,mean_TPCs=run_calibration(output_file, no_of_calibration_iterations,nsb_MHz_at_time_zero,flasher_illumination_time_zero,nsb_rate_of_change_MHz_s,flasher_rate_Hz,no_of_flashes_in_calibration_step,interval_between_calibration_s)
+        plotnormal(ax1, mean_TPCs,mean_MPRCs,str(nsb_rate_of_change_MHz_s) + " MHz/s")
+    #show_plt(ax1)
+    fname = "/home/sheridan/Documents/SSTCAM/TO PRESENT/JON_L_LASER_INVESTIGATION/" + SEDLabel + '.png'
+    plt.savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait',  format=None,
+                transparent=False, bbox_inches=None, pad_inches=0.1)
+
+    return
+
+PltVaryNSBRateWithTrueIllumination()
+
+
+def PltVaryNoOfFlashesWithTrueIllumination():
+
+    # Vary Flasher Rate - plot against True illumination which excludes NSB and allows for over-voltage reduction
+    ax1=new_plt("Vary Flashes in calibration - Measured Illumination vs True Illumination", "True charge (p.e.)", "Measured charge (p.e.)")
+    nsb_MHz_at_time_zero=50
+    flasher_illumination_time_zero=100
+    nsb_rate_of_change_MHz_s=0.2
+    interval_between_calibration_s=600
+    no_of_calibration_iterations=100
+    flasher_rate_Hz=10
+    SEDLabel = "VaryNo_Of_Flashes_10_200_Initial_NSB_50MHz_1"
+    output_file="/home/sheridan/Documents/SSTCAM/TO PRESENT/JON_L_LASER_INVESTIGATION/" + SEDLabel + '.log'
+
+    for no_of_flashes_in_calibration_step in [10,50,100,200]:
+        PrintParams(output_file,no_of_calibration_iterations, nsb_MHz_at_time_zero, flasher_illumination_time_zero,
+                    nsb_rate_of_change_MHz_s, flasher_rate_Hz, no_of_flashes_in_calibration_step,
+                    interval_between_calibration_s)
+
+
+        mean_MPRCs,std_dev_MPRCs,RMSEs,mean_NSBs,mean_TPCs=run_calibration(output_file, no_of_calibration_iterations,nsb_MHz_at_time_zero,flasher_illumination_time_zero,nsb_rate_of_change_MHz_s,flasher_rate_Hz,no_of_flashes_in_calibration_step,interval_between_calibration_s)
+        plotnormal(ax1, mean_TPCs,mean_MPRCs,str(no_of_flashes_in_calibration_step) + " flashes")
+    # show_plt(ax1)
+    fname = "/home/sheridan/Documents/SSTCAM/TO PRESENT/JON_L_LASER_INVESTIGATION/" + SEDLabel + '.png'
+    plt.savefig(fname, dpi=None, facecolor='w', edgecolor='w', orientation='portrait',  format=None,
+                transparent=False, bbox_inches=None, pad_inches=0.1)
+
+    return
+
+PltVaryNoOfFlashesWithTrueIllumination()
