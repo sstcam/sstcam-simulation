@@ -68,6 +68,15 @@ def main():
     p_nominal_nsb.add_legend(loc="best")
     p_nominal_nsb.save("nominal_nsb.pdf")
 
+    p_maximum_nsb = Plotter()
+    for candidate, group in df.groupby("sipm_candidate"):
+        p_maximum_nsb.ax.plot(group['overvoltage'], group['maximum_nsb_rate'], 'x-', label=candidate)
+    p_maximum_nsb.ax.axhline(prod4_eff.maximum_nsb_rate.to_value("MHz"), ls='--', color='blue', label="Prod4")
+    p_maximum_nsb.ax.set_xlabel("Overvoltage (V)")
+    p_maximum_nsb.ax.set_ylabel("Maximum NSB Rate (MHz)")
+    p_maximum_nsb.add_legend(loc="best")
+    p_maximum_nsb.save("maximum_nsb.pdf")
+
     p_mia_g = Plotter()
     for candidate, group in df.groupby("sipm_candidate"):
         p_mia_g.ax.plot(group['overvoltage'], group['minimum_image_amplitude'], 'x-', label=candidate)
