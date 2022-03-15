@@ -535,7 +535,10 @@ class CameraEfficiency:
         )
 
     @classmethod
-    def from_sstcam(cls, fov_angle=0, pde_at_450nm=None, window=WindowDurhamNeedle()):
+    def from_sstcam(cls, fov_angle=0, pde_at_450nm=None, window=None):
+        if window is None:
+            window = WindowDurhamNeedle()
+
         # Read telescope arrays TODO: updated & vs axis angle
         df_tel = pd.read_csv(PROD4_PATH_TEL)
         telescope_transmissivity = df_tel['telescope_transmissivity'].values
