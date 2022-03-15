@@ -30,7 +30,7 @@ git clone https://github.com/sstcam/sstcam-simulation.git
 cd sstcam-simulation
 conda env create -f environment.yml
 conda activate sstcam-simulation
-python setup.py develop
+pip install -e .
 ```
 
 

@@ -39,7 +39,7 @@ jobs:
           KONRAD_USERNAME: ${{ secrets.KONRAD_USERNAME }}
           KONRAD_PASSWORD: ${{ secrets.KONRAD_PASSWORD }}
         run: |
-          python setup.py develop
+          pip install -e .
           python sstcam_simulation/data/__init__.py
       - name: Test
         shell: bash -l {0}
