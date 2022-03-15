@@ -1,4 +1,5 @@
 from sstcam_simulation.data import get_data
+from sstcam_simulation.utils.photon_incidence_angles import PhotonIncidenceAnglesSiPM
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -18,8 +19,8 @@ def interpolate_at(df, new_idxs):
 
 class PDEvsWavelength:
     def __init__(self, df):
-        wavelength = np.arange(200, 1000)
-        self._df_unscaled = interpolate_at(df, wavelength) / 100
+        self.wavelength = np.arange(200, 1000)
+        self._df_unscaled = interpolate_at(df, self.wavelength) / 100
         self._pde_scale = 1
 
     @u.quantity_input
@@ -72,6 +73,23 @@ class PDEvsWavelength:
         f = interp1d(angles, arrays, axis=0)
         return f(angle)
 
+    def weight_by_incidence_angle(self, off_axis_angle: float):
+        incidence_angles = PhotonIncidenceAnglesSiPM()
+
+        # Interpolate the input item (window/PDE) to matching incidence angles
+        incidence_angle = incidence_angles.incidence_angle
+        in_range = incidence_angle <= 80
+        incidence_angle = incidence_angle[in_range]
+        input_2d = self.interpolate(incidence_angle)
+
+        # Extract the incidence array for the specified off-axis angle
+        incidence_pdf = incidence_angles.interpolate_at_off_axis_angle(off_axis_angle)
+        incidence_pdf = incidence_pdf[in_range]
+
+        return np.trapz(  # TODO: trapz or sum?
+            input_2d * incidence_pdf[:, None], incidence_angle, axis=0
+        ) / np.trapz(incidence_pdf, incidence_angle)
+
     @classmethod
     def LVR3_75um_6mm(cls):
         path = get_data("datasheet/efficiency/pde_LVR3_75um_6mm.csv")
@@ -98,3 +116,33 @@ def read_prototype():
     pde_interp = f(wavelength_interp)
     pde_interp[pde_interp < 0] = 0
     return pde_interp
+
+
+if __name__ == '__main__':
+    off_axis_angles = [0, 2, 4]
+    pdes = [
+        PDEvsWavelength.LVR3_75um_6mm(),
+    ]
+
+    for pde in pdes:
+        fig, ax = plt.subplots()
+
+        x = pde.wavelength
+        y = pde.interpolate(0)
+        ax.plot(x, y, '-', alpha=0.1)
+
+        for angle in off_axis_angles:
+            x = pde.wavelength
+            y = pde.weight_by_incidence_angle(angle)
+            ax.plot(x, y, label=f"{angle}deg")
+
+        ax.legend(title="Off-Axis Angle")
+        ax.set_xlabel("Wavelength (nm)")
+        ax.set_ylabel("Transmission")
+        ax.set_title(pde.__class__.__name__)
+        fig.savefig(f"{pde.__class__.__name__}.pdf")
+
+    # w = WindowDurhamNeedle()
+    # w.plot_measured()
+    # plt.legend()
+    # plt.show()

@@ -535,41 +535,23 @@ class CameraEfficiency:
         )
 
     @classmethod
-    def from_sstcam(cls, fov_angle=0, pde_at_450nm=None):
+    def from_sstcam(cls, fov_angle=0, pde_at_450nm=None, window=WindowDurhamNeedle()):
         # Read telescope arrays TODO: updated & vs axis angle
         df_tel = pd.read_csv(PROD4_PATH_TEL)
         telescope_transmissivity = df_tel['telescope_transmissivity'].values
         mirror_reflectivity = df_tel['mirror_reflectivity'].values
 
-        # Read angular distribution of photon incidence TODO: real and vs axis angle
-        from scipy.stats import norm
-        incidence_angle = np.linspace(0, 60, 100)
-        # incidence_pdf = norm.pdf(incidence_angle, off_axis_angle*6, 20)
-        # incidence_pdf = np.ones(incidence_angle.size)
-        incidence_pdf = np.zeros(incidence_angle.size)
-        incidence_pdf[0] = 1
-        incidence_pdf /= np.trapz(incidence_pdf, incidence_angle)
-
-        def weight_by_incidence_angle(y_2d) -> np.ndarray:
-            # noinspection PyTypeChecker
-            return np.trapz(  # TODO: trapz or sum?
-                y_2d * incidence_pdf[:, None], incidence_angle, axis=0
-            ) / np.trapz(incidence_pdf, incidence_angle)
-
-        # Read camera window transmissivity
-        window = WindowDurhamNeedle()
-        # Weight by angular distribution of photon incidence
-        # noinspection PyTypeChecker
-        weighted_window_transmissivity = weight_by_incidence_angle(
-            window.interpolate(incidence_angle)
+        # Weight window transmission by angular distribution of photon incidence
+        weighted_window_transmissivity = window.weight_by_incidence_angle(
+            off_axis_angle=fov_angle
         )
 
         # Read camera pde
         pde_vs_wavelength = PDEvsWavelength.LVR3_75um_6mm()
         if pde_at_450nm:
             pde_vs_wavelength.scale(u.Quantity(450, u.nm), pde_at_450nm)
-        weighted_pde = weight_by_incidence_angle(
-            pde_vs_wavelength.interpolate(incidence_angle)
+        weighted_pde = pde_vs_wavelength.weight_by_incidence_angle(
+            off_axis_angle=fov_angle
         )
 
         # Read scalar quantities
@@ -592,3 +574,27 @@ class CameraEfficiency:
             window_transmissivity=weighted_window_transmissivity,
             pde=weighted_pde,
         )
+
+
+if __name__ == '__main__':
+    from matplotlib import pyplot as plt
+    lvr3 = CameraEfficiency.from_sstcam_lvr3_uncoated()
+    lvr3.scale_pde(u.Quantity(470, u.nm), 0.532)
+
+    lct5 = CameraEfficiency.from_sstcam_lct5_resin()
+    lct5.scale_pde(u.Quantity(470, u.nm), 0.532)
+
+    proto = CameraEfficiency.from_sstcam_prototype_sipm()
+    #
+    print("LVR3: ", lvr3.camera_cherenkov_pde, lvr3.B_TEL_1170_pde, lvr3.telescope_signal_to_noise)
+    print("LCT5: ", lct5.camera_cherenkov_pde, lct5.B_TEL_1170_pde, lct5.telescope_signal_to_noise)
+    print("LVR3: ", proto.camera_cherenkov_pde, proto.B_TEL_1170_pde, proto.telescope_signal_to_noise)
+
+    plt.plot(lvr3.wavelength, lvr3.pde, label=f"LVR3 (ChPDE: {lvr3.camera_cherenkov_pde:.2f}, S/N: {lvr3.telescope_signal_to_noise:.2f})")
+    plt.plot(lct5.wavelength, lct5.pde, label=f"LCT5 Resin (ChPDE: {lct5.camera_cherenkov_pde:.2f}, S/N: {lct5.telescope_signal_to_noise:.2f})")
+    plt.plot(proto.wavelength, proto.pde, label=f"Prototype (ChPDE: {proto.camera_cherenkov_pde:.2f}, S/N: {proto.telescope_signal_to_noise:.2f})")
+    plt.legend()
+    plt.xlabel("Wavelength (nm)")
+    plt.ylabel("PDE")
+
+    plt.show()

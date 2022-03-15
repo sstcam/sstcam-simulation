@@ -13,7 +13,7 @@ PROD4_MINIMGAMP_PROTON = 208
 
 
 def main():
-    path = "sipm_candidate_performance.h5"
+    path = "candidate/performance.h5"
     with pd.HDFStore(path) as store:
         df = store['data']
 
@@ -28,7 +28,7 @@ def main():
     p_cherenkov_pde.ax.set_xlabel("Overvoltage (V)")
     p_cherenkov_pde.ax.set_ylabel("Camera Cherenkov PDE")
     p_cherenkov_pde.add_legend(loc="best")
-    p_cherenkov_pde.save("camera_cherenkov_pde.pdf")
+    p_cherenkov_pde.save("candidate/sipm/camera_cherenkov_pde.pdf")
 
     p_B_TEL_1170_pde = Plotter()
     for candidate, group in df.groupby("sipm_candidate"):
@@ -38,7 +38,7 @@ def main():
     p_B_TEL_1170_pde.ax.set_xlabel("Overvoltage (V)")
     p_B_TEL_1170_pde.ax.set_ylabel("B-TEL-1170 PDE")
     p_B_TEL_1170_pde.add_legend(loc="best")
-    p_B_TEL_1170_pde.save("B_TEL_1170_pde.pdf")
+    p_B_TEL_1170_pde.save("candidate/sipm/B_TEL_1170_pde.pdf")
 
     p_sn = Plotter()
     for candidate, group in df.groupby("sipm_candidate"):
@@ -48,7 +48,7 @@ def main():
     p_sn.ax.set_xlabel("Overvoltage (V)")
     p_sn.ax.set_ylabel("B-TEL-0090 SNR")
     p_sn.add_legend(loc="best")
-    p_sn.save("B-TEL-0090_snr.pdf")
+    p_sn.save("candidate/sipm/B-TEL-0090_snr.pdf")
 
     p_opct = Plotter()
     for candidate, group in df.groupby("sipm_candidate"):
@@ -57,7 +57,7 @@ def main():
     p_opct.ax.set_xlabel("Overvoltage (V)")
     p_opct.ax.set_ylabel("Optical Crosstalk")
     p_opct.add_legend(loc="best")
-    p_opct.save("opct.pdf")
+    p_opct.save("candidate/sipm/opct.pdf")
 
     p_nominal_nsb = Plotter()
     for candidate, group in df.groupby("sipm_candidate"):
@@ -66,7 +66,7 @@ def main():
     p_nominal_nsb.ax.set_xlabel("Overvoltage (V)")
     p_nominal_nsb.ax.set_ylabel("Nominal NSB Rate (MHz)")
     p_nominal_nsb.add_legend(loc="best")
-    p_nominal_nsb.save("nominal_nsb.pdf")
+    p_nominal_nsb.save("candidate/sipm/nominal_nsb.pdf")
 
     p_maximum_nsb = Plotter()
     for candidate, group in df.groupby("sipm_candidate"):
@@ -75,7 +75,7 @@ def main():
     p_maximum_nsb.ax.set_xlabel("Overvoltage (V)")
     p_maximum_nsb.ax.set_ylabel("Maximum NSB Rate (MHz)")
     p_maximum_nsb.add_legend(loc="best")
-    p_maximum_nsb.save("maximum_nsb.pdf")
+    p_maximum_nsb.save("candidate/sipm/maximum_nsb.pdf")
 
     p_mia_g = Plotter()
     for candidate, group in df.groupby("sipm_candidate"):
@@ -85,7 +85,7 @@ def main():
     p_mia_g.ax.set_xlabel("Overvoltage (V)")
     p_mia_g.ax.set_ylabel("Minimum Image Amplitude (ph.)")
     p_mia_g.add_legend(loc="best")
-    p_mia_g.save("mia_gamma.pdf")
+    p_mia_g.save("candidate/sipm/mia_gamma.pdf")
 
 
 
