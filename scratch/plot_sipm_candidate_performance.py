@@ -18,6 +18,7 @@ def main():
         df = store['data']
 
     df = df.loc[df['fov_angle'] == 0]
+    df = df.loc[df["window_candidate"] == "durham_needle"]
 
     prod4_eff = CameraEfficiency.from_prod4()
 

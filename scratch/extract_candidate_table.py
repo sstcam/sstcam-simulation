@@ -15,9 +15,9 @@ from tqdm import tqdm
 SIM_PATH = "/Users/Jason/Software/sstcam-simulation/optimisation_studies/overvoltage/performance.h5"
 
 
-class MinimumImageAmplitudeInterpolator:
-    def __init__(self, df):
-        xcol, ycol, zcol, vcol = "opct", "nsb_rate", "mv_per_pe", "minimum_image_amplitude"
+class PEInterpolator:
+    def __init__(self, df, column):
+        xcol, ycol, zcol, vcol = "opct", "nsb_rate", "mv_per_pe", column
         df = df.sort_values(by=[xcol, ycol, zcol])
         xvals = df[xcol].unique()
         yvals = df[ycol].unique()
@@ -31,18 +31,18 @@ class MinimumImageAmplitudeInterpolator:
         return self.f(pts)
 
     @classmethod
-    def gamma(cls):
+    def gamma(cls, column):
         with pd.HDFStore(SIM_PATH, mode='r') as store:
             df = store['data']
             df = df.loc[df['shower_primary_id'] == 0]
-        return cls(df)
+        return cls(df, column)
 
     @classmethod
-    def proton(cls):
+    def proton(cls, column):
         with pd.HDFStore(SIM_PATH, mode='r') as store:
             df = store['data']
             df = df.loc[df['shower_primary_id'] == 101]
-        return cls(df)
+        return cls(df, column)
 
 
 def main():
@@ -67,7 +67,8 @@ def main():
         prod4window=Prod4Window(),
     )
 
-    mia_gamma_interp = MinimumImageAmplitudeInterpolator.gamma()
+    mia_gamma_interp = PEInterpolator.gamma("minimum_image_amplitude")
+    trigger_threshold_mean_interp = PEInterpolator.gamma("trigger_threshold_mean")
 
     for window_candidate, window_tool in tqdm(window_candidates.items()):
         for sipm_candidate, sipm_tool in tqdm(sipm_candidates.items()):
@@ -88,6 +89,8 @@ def main():
                     nominal_nsb_rate = eff.nominal_nsb_rate.to_value("MHz")
                     mia_pe = mia_gamma_interp(opct, nominal_nsb_rate, mv_per_pe)[0]
                     mia_photons = mia_pe / camera_cherenkov_pde
+                    trig_thresh_pe = trigger_threshold_mean_interp(opct, nominal_nsb_rate, mv_per_pe)[0]
+                    trig_thresh_photons = trig_thresh_pe / camera_cherenkov_pde
 
                     d_list.append(dict(
                         sipm_candidate=sipm_candidate,
@@ -108,6 +111,8 @@ def main():
                         maximum_nsb_rate=eff.maximum_nsb_rate.to_value("MHz"),
                         n_cherenkov_photoelectrons=eff.n_cherenkov_photoelectrons,
                         minimum_image_amplitude=mia_photons,
+                        trigger_threshold_pe=trig_thresh_pe,
+                        trigger_threshold_photons=trig_thresh_photons,
                     ))
 
     df = pd.DataFrame(d_list)
