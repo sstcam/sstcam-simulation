@@ -47,83 +47,137 @@ def main():
 
     p_comparison = ComparisonPlot(talk=talk)
     performance_col = "minimum_image_amplitude"
-    for trigger_sn, group in df_g.groupby("trigger_sn"):
-        label = f"{trigger_sn:.2f}"
-        p_comparison.plot(group['pulse_width'], group[performance_col], label)
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['trigger_sn'], group[performance_col], label)
     p_comparison.ax.axhline(MINIMGAMP_GAMMA_50PDE, ls='--', color='black')
-    p_comparison.ax.text(3, MINIMGAMP_GAMMA_50PDE, "Requirement (Gamma, 50% PDE)", va='bottom', fontsize=5, color='black', alpha=0.4)
-    p_comparison.ax.legend(title="Trigger S/N")
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
+    p_comparison.ax.text(0.25, MINIMGAMP_GAMMA_50PDE, "Requirement (Gamma, 50% PDE)", va='bottom', fontsize=5, color='black', alpha=0.4)
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Trigger S/N")
     p_comparison.ax.set_ylabel("Minimum Image Amplitude (p.e.)")
     p_comparison.save("minimum_image_amplitude_gamma.pdf")
 
     p_comparison = ComparisonPlot(talk=talk)
     performance_col = "minimum_image_amplitude"
-    for pulse_width, group in df_g.groupby("pulse_width"):
-        label = f"{pulse_width:.2f}"
-        p_comparison.plot(group['trigger_sn'], group[performance_col], label)
-    p_comparison.ax.axhline(MINIMGAMP_GAMMA_50PDE, ls='--', color='black')
-    p_comparison.ax.text(0.25, MINIMGAMP_GAMMA_50PDE, "Requirement (Gamma, 50% PDE)", va='bottom', fontsize=5, color='black', alpha=0.4)
-    p_comparison.ax.legend(title="Pulse Width (ns)")
+    y = df_g.loc[df_g["pulse_name"] == "CHEC-S"][performance_col].values
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['trigger_sn'], group[performance_col] / y, label)
+    p_comparison.ax.legend(loc="best")
     p_comparison.ax.set_xlabel("Trigger S/N")
     p_comparison.ax.set_ylabel("Minimum Image Amplitude (p.e.)")
-    p_comparison.save("minimum_image_amplitude_gamma_vs_sn.pdf")
+    p_comparison.save("minimum_image_amplitude_gamma_rel.pdf")
 
     p_comparison = ComparisonPlot(talk=talk)
     performance_col = "minimum_image_amplitude"
-    for trigger_sn, group in df_p.groupby("trigger_sn"):
-        label = f"{trigger_sn:.2f}"
-        p_comparison.plot(group['pulse_width'], group[performance_col], label)
+    for pulse_name, group in df_p.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['trigger_sn'], group[performance_col], label)
     p_comparison.ax.axhline(MINIMGAMP_PROTON_50PDE, ls='--', color='black')
-    p_comparison.ax.text(3, MINIMGAMP_PROTON_50PDE, "Requirement (Proton, 50% PDE)", va='bottom', fontsize=5, color='black', alpha=0.4)
-    p_comparison.ax.legend(title="Waveform S/N")
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
+    p_comparison.ax.text(0.25, MINIMGAMP_PROTON_50PDE, "Requirement (Proton, 50% PDE)", va='bottom', fontsize=5, color='black', alpha=0.4)
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Trigger S/N")
     p_comparison.ax.set_ylabel("Minimum Image Amplitude (p.e.)")
     p_comparison.save("minimum_image_amplitude_proton.pdf")
-    #
+
+    p_comparison = ComparisonPlot(talk=talk)
+    performance_col = "minimum_image_amplitude"
+    y = df_p.loc[df_p["pulse_name"] == "CHEC-S"][performance_col].values
+    for pulse_name, group in df_p.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['trigger_sn'], group[performance_col] / y, label)
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Trigger S/N")
+    p_comparison.ax.set_ylabel("Minimum Image Amplitude (p.e.)")
+    p_comparison.save("minimum_image_amplitude_proton_rel.pdf")
+
     p_comparison = ComparisonPlot(talk=talk)
     performance_col = "cr_extracted_2pe"
-    for waveform_sn, group in df_g.groupby("waveform_sn"):
-        label = f"{waveform_sn:.2f}"
-        p_comparison.plot(group['pulse_width'], group[performance_col], label)
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col], label)
     p_comparison.ax.axhline(CRREQ_2PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.ax.legend(title="Waveform S/N")
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
     p_comparison.ax.set_ylabel("Fractional CR @ 2 p.e.")
     p_comparison.save("cr_extracted_2pe.pdf")
 
     p_comparison = ComparisonPlot(talk=talk)
+    performance_col = "cr_extracted_2pe"
+    y = df_g.loc[df_g["pulse_name"] == "CHEC-S"][performance_col].values
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col] / y, label)
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
+    p_comparison.ax.set_ylabel("Fractional CR @ 2 p.e.")
+    p_comparison.save("cr_extracted_2pe_rel.pdf")
+
+    p_comparison = ComparisonPlot(talk=talk)
     performance_col = "cr_extracted_20pe"
-    for waveform_sn, group in df_g.groupby("waveform_sn"):
-        label = f"{waveform_sn:.2f}"
-        p_comparison.plot(group['pulse_width'], group[performance_col], label)
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col], label)
     p_comparison.ax.axhline(CRREQ_20PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.ax.legend(title="Waveform S/N")
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
     p_comparison.ax.set_ylabel("Fractional CR @ 20 p.e.")
     p_comparison.save("cr_extracted_20pe.pdf")
 
     p_comparison = ComparisonPlot(talk=talk)
+    performance_col = "cr_extracted_20pe"
+    y = df_g.loc[df_g["pulse_name"] == "CHEC-S"][performance_col].values
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col] / y, label)
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
+    p_comparison.ax.set_ylabel("Fractional CR @ 20 p.e.")
+    p_comparison.save("cr_extracted_20pe_rel.pdf")
+
+    p_comparison = ComparisonPlot(talk=talk)
     performance_col = "cr_extracted_200pe"
-    for waveform_sn, group in df_g.groupby("waveform_sn"):
-        label = f"{waveform_sn:.2f}"
-        p_comparison.plot(group['pulse_width'], group[performance_col], label)
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col], label)
     p_comparison.ax.axhline(CRREQ_200PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.ax.legend(title="Waveform S/N")
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
     p_comparison.ax.set_ylabel("Fractional CR @ 200 p.e.")
     p_comparison.save("cr_extracted_200pe.pdf")
 
     p_comparison = ComparisonPlot(talk=talk)
+    performance_col = "cr_extracted_200pe"
+    y = df_g.loc[df_g["pulse_name"] == "CHEC-S"][performance_col].values
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col] / y, label)
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
+    p_comparison.ax.set_ylabel("Fractional CR @ 200 p.e.")
+    p_comparison.save("cr_extracted_200pe_rel.pdf")
+
+    p_comparison = ComparisonPlot(talk=talk)
     performance_col = "cr_extracted_2000pe"
-    for waveform_sn, group in df_g.groupby("waveform_sn"):
-        label = f"{waveform_sn:.2f}"
-        p_comparison.plot(group['pulse_width'], group[performance_col], label)
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col], label)
     p_comparison.ax.axhline(CRREQ_2000PE_50PDE, ls='--', color='black', label="Requirement (50% PDE)")
-    p_comparison.ax.legend(title="Waveform S/N")
-    p_comparison.ax.set_xlabel("Pulse Width (ns)")
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
     p_comparison.ax.set_ylabel("Fractional CR @ 2000 p.e.")
     p_comparison.save("cr_extracted_2000pe.pdf")
+
+    p_comparison = ComparisonPlot(talk=talk)
+    performance_col = "cr_extracted_2000pe"
+    y = df_g.loc[df_g["pulse_name"] == "CHEC-S"][performance_col].values
+    for pulse_name, group in df_g.groupby("pulse_name"):
+        label = pulse_name
+        p_comparison.plot(group['waveform_sn'], group[performance_col] / y, label)
+    p_comparison.ax.legend()
+    p_comparison.ax.set_xlabel("Waveform S/N")
+    p_comparison.ax.set_ylabel("Fractional CR @ 2000 p.e.")
+    p_comparison.save("cr_extracted_2000pe_rel.pdf")
 
 
 if __name__ == '__main__':
