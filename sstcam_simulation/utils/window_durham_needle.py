@@ -89,7 +89,23 @@ class _SSTWindow(Window):
         df = pd.read_csv(path)
         self.df = df.set_index("Wavelength (nm)") / 100
         self.df = self.df.reindex(np.arange(200, 1000))
-        self.df = self.df.interpolate(limit_area="outside", limit_direction="both")
+
+        def interpolate(x, y):
+            mask = ~np.isnan(y)
+            x = x[mask]
+            y = y[mask]
+            from scipy.interpolate import interp1d
+            f = interp1d(x, y, fill_value="extrapolate")
+            x_new = np.arange(200, 1000)
+            y_new = f(x_new)
+            y_new[x_new < 300] = 0
+            return y_new
+
+        self.df['M0'] = interpolate(self.df.index, self.df["M0"])
+        self.df['M20'] = interpolate(self.df.index, self.df["M20"])
+        self.df['M45'] = interpolate(self.df.index, self.df["M45"])
+        self.df['M50'] = interpolate(self.df.index, self.df["M50"])
+        self.df['M60'] = interpolate(self.df.index, self.df["M60"])
 
         angles = np.array([0, 20, 45, 50, 60])
         arrays = np.vstack([
@@ -100,7 +116,6 @@ class _SSTWindow(Window):
             self.df['M60'],
         ])
         super().__init__(incidence_angles=angles, transmission=arrays)
-
 
 class SSTWindowRun2(_SSTWindow):
     def __init__(self):
@@ -125,6 +140,8 @@ class Prod4Window(Window):
         PROD4_PATH_WINDOW = get_data("datasheet/efficiency/window_prod4.csv")
         df_window = pd.read_csv(PROD4_PATH_WINDOW)
         window_transmissivity = df_window['window_transmissivity'].values
+        mask = df_window["wavelength"] < 280
+        window_transmissivity[mask] = 0
         super().__init__(np.array([0]), window_transmissivity[None, :])
 
     def weight_by_incidence_angle(self, off_axis_angle: float):
@@ -132,32 +149,27 @@ class Prod4Window(Window):
 
 
 if __name__ == '__main__':
-    off_axis_angles = [0, 2, 4]
-    windows = [
-        SSTWindowRun2(),
-        SSTWindowRun3(),
-        SSTWindowRun4(),
-    ]
+    fig, ax = plt.subplots()
 
-    for window in windows:
-        fig, ax = plt.subplots()
+    window_sstcam = SSTWindowRun3()
+    x = window_sstcam.df.index.values
+    y = window_sstcam.weight_by_incidence_angle(0)
+    ax.plot(x, y, label=f"sstcam-weighted")
 
-        x = window.df.index.values
-        y = window.interpolate_at_incidence_angle(0)
-        ax.plot(x, y, '-', alpha=0.1)
+    # mask = ~np.isnan(y)
+    # x = x[mask]
+    # y = y[mask]
+    # np.savetxt("transmission.txt", np.column_stack([x, y]), fmt=("%.0f", "%.5f"), delimiter="\t")
 
-        for angle in off_axis_angles:
-            x = window.df.index.values
-            y = window.weight_by_incidence_angle(angle)
-            ax.plot(x, y, label=f"{angle}deg")
 
-        ax.legend(title="Off-Axis Angle")
-        ax.set_xlabel("Wavelength (nm)")
-        ax.set_ylabel("Transmission")
-        ax.set_title(window.__class__.__name__)
-        fig.savefig(f"{window.__class__.__name__}.pdf")
+    # y = window_sstcam.interpolate_at_incidence_angle(45)
+    # ax.plot(x, y, label=f"sstcam-45deg")
+    window_sstcam = Prod4Window()
+    y = window_sstcam.weight_by_incidence_angle(0)
+    ax.plot(x, y, label=f"prod4-weighted")
 
-    # w = WindowDurhamNeedle()
-    # w.plot_measured()
-    # plt.legend()
-    # plt.show()
+    ax.legend()
+    ax.set_xlabel("Wavelength (nm)")
+    ax.set_ylabel("Transmission")
+    # ax.set_title(window.__class__.__name__)
+    fig.savefig(f"window_comparison.pdf")

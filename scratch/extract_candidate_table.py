@@ -122,3 +122,16 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    # from sstcam_simulation.utils.sipm.pde import PDEvsWavelength
+    # from astropy import units as u
+    #
+    # sipm_tool = SiPMOvervoltage.lvr3_6mm_50um_uncoated()
+    # sipm_tool.overvoltage = 5.9
+    # pde_at_450nm = sipm_tool.pde
+    # pde_vs_wavelength = PDEvsWavelength.LVR3_75um_6mm()
+    # pde_vs_wavelength.scale(u.Quantity(450, u.nm), pde_at_450nm)
+    # weighted_pde = pde_vs_wavelength.weight_by_incidence_angle(
+    #     off_axis_angle=0
+    # )
+    # np.savetxt("PDE.txt", np.column_stack([pde_vs_wavelength.wavelength, weighted_pde]), fmt=("%.3f", "%.5f"), delimiter="\t")
