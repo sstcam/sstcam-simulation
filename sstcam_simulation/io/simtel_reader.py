@@ -68,6 +68,11 @@ class SimtelReader:
         mapping = SSTCameraMapping()
         for telid, tel in self._file.telescope_descriptions.items():
             camera_settings = tel['camera_settings']
+
+            # Only consider SST camera
+            if camera_settings['n_pixels'] != self.n_pixels:
+                continue
+
             self._camera_settings[telid] = camera_settings
             self._pixel_remap[telid] = get_pixel_remap(
                 camera_settings['pixel_x'],
@@ -103,7 +108,7 @@ class SimtelReader:
                 tel_ids = np.array(list(photoelectrons.keys())) + 1
             for tel_id in tel_ids:
                 # Retrieve only SST Camera
-                if self._camera_settings[tel_id]['n_pixels'] != self.n_pixels:
+                if tel_id not in self._camera_settings:
                     continue
 
                 n_events += 1
