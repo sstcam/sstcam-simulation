@@ -59,7 +59,7 @@ def main():
     p_nominal_nsb.ax.set_xlabel("Off-Axis Angle (deg)")
     p_nominal_nsb.ax.set_ylabel("Nominal NSB Rate (MHz)")
     p_nominal_nsb.add_legend(loc="best")
-    p_nominal_nsb.save("candidate/sipm/nominal_nsb.pdf")
+    p_nominal_nsb.save("candidate/window/nominal_nsb.pdf")
 
     p_maximum_nsb = Plotter()
     for candidate, group in df.groupby("window_candidate"):
@@ -69,7 +69,7 @@ def main():
     p_maximum_nsb.ax.set_xlabel("Off-Axis Angle (deg)")
     p_maximum_nsb.ax.set_ylabel("Maximum NSB Rate (MHz)")
     p_maximum_nsb.add_legend(loc="best")
-    p_maximum_nsb.save("candidate/sipm/maximum_nsb.pdf")
+    p_maximum_nsb.save("candidate/window/maximum_nsb.pdf")
 
     p_mia_g = Plotter()
     for candidate, group in df.groupby("window_candidate"):

@@ -135,6 +135,25 @@ class SSTWindowRun4(_SSTWindow):
         super().__init__(path=path)
 
 
+class DurhamNeedleWindowD2208Prod1FilterAR(Window):
+    def __init__(self):
+        path = get_data("datasheet/efficiency/Durham_Needle_Window_d2208_Prod1_FilterAR.csv")
+        df = pd.read_csv(path)
+        self.df = df.set_index("Wavelength (nm)") / 100
+        self.df = self.df.reindex(np.arange(200, 1000))
+        self.df = self.df.fillna(0)
+
+        angles = np.array([0, 20, 45, 50, 60])
+        arrays = np.vstack([
+            self.df['M0'],
+            self.df['M20'],
+            self.df['M45'],
+            self.df['M50'],
+            self.df['M60'],
+        ])
+        super().__init__(incidence_angles=angles, transmission=arrays)
+
+
 class Prod4Window(Window):
     def __init__(self):
         PROD4_PATH_WINDOW = get_data("datasheet/efficiency/window_prod4.csv")

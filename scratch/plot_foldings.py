@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sstcam_simulation.utils.efficiency import CameraEfficiency
 from sstcam_simulation.utils.sipm import SiPMOvervoltage
-from sstcam_simulation.utils.window_durham_needle import SSTWindowRun3, Window
+from sstcam_simulation.utils.window_durham_needle import DurhamNeedleWindowD2208Prod1FilterAR, Window
 
 MINIMGAMP_GAMMA = 250
 MINIMGAMP_PROTON = 480
@@ -18,7 +18,7 @@ def main():
     sipm_tool = SiPMOvervoltage.lvr3_6mm_50um_uncoated()
     sipm_tool.overvoltage = 6
     pde_at_450nm = sipm_tool.pde
-    window_tool = SSTWindowRun3()
+    window_tool = DurhamNeedleWindowD2208Prod1FilterAR()
 
     eff = CameraEfficiency.from_sstcam(
         fov_angle=0,

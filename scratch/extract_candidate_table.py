@@ -6,6 +6,7 @@ from sstcam_simulation.utils.window_durham_needle import (
     SSTWindowRun3,
     SSTWindowRun4,
     Prod4Window,
+    DurhamNeedleWindowD2208Prod1FilterAR,
 )
 import numpy as np
 import pandas as pd
@@ -65,6 +66,7 @@ def main():
         run3=SSTWindowRun3(),
         run4=SSTWindowRun4(),
         prod4window=Prod4Window(),
+        durham_d2208_prod1_FilterAR=DurhamNeedleWindowD2208Prod1FilterAR(),
     )
 
     mia_gamma_interp = PEInterpolator.gamma("minimum_image_amplitude")
