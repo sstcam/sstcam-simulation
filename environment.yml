@@ -6,7 +6,7 @@ channels:
 dependencies:
   - anaconda-client
   - pip
-  - numpy
+  - numpy~=1.21
   - scipy
   - astropy
   - pandas
