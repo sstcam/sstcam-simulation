@@ -15,7 +15,7 @@ setup(
     install_requires=[
         'astropy',
         'scipy',
-        'numpy',
+        'numpy~=1.21',
         'pandas',
         'tables',
         'matplotlib',
