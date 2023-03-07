@@ -7,6 +7,7 @@ from sstcam_simulation.utils.window_durham_needle import (
     SSTWindowRun4,
     Prod4Window,
     DurhamNeedleWindowD2208Prod1FilterAR,
+    AkiraWindow,
 )
 import numpy as np
 import pandas as pd
@@ -67,6 +68,7 @@ def main():
         run4=SSTWindowRun4(),
         prod4window=Prod4Window(),
         durham_d2208_prod1_FilterAR=DurhamNeedleWindowD2208Prod1FilterAR(),
+        # akira=AkiraWindow(),
     )
 
     mia_gamma_interp = PEInterpolator.gamma("minimum_image_amplitude")
@@ -87,7 +89,7 @@ def main():
                     opct = sipm_tool.opct
                     gain = sipm_tool.gain
                     camera_cherenkov_pde = eff.camera_cherenkov_pde
-                    mv_per_pe = 4
+                    mv_per_pe = 3.2
                     nominal_nsb_rate = eff.nominal_nsb_rate.to_value("MHz")
                     mia_pe = mia_gamma_interp(opct, nominal_nsb_rate, mv_per_pe)[0]
                     mia_photons = mia_pe / camera_cherenkov_pde
