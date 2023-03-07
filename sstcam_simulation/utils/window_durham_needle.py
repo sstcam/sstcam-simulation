@@ -167,13 +167,41 @@ class Prod4Window(Window):
         return self.transmission[0]
 
 
+class AkiraWindow(Window):
+    def __init__(self):
+        path = get_data("datasheet/efficiency/akira_window.csv")
+        df = pd.read_csv(path, names=["wavelength", "transmission"])
+        xs = df["wavelength"].values
+        ys = df["transmission"].values / 100
+
+        f = interp1d(xs, ys, fill_value='extrapolate')
+        xnew = np.arange(200, 1000)
+        ynew = f(xnew)
+        super().__init__(np.array([0]), ynew[None, :])
+
+    def weight_by_incidence_angle(self, off_axis_angle: float):
+        return self.transmission[0]
+
+
 if __name__ == '__main__':
     fig, ax = plt.subplots()
 
-    window_sstcam = SSTWindowRun3()
-    x = window_sstcam.df.index.values
-    y = window_sstcam.weight_by_incidence_angle(0)
-    ax.plot(x, y, label=f"sstcam-weighted")
+    window = AkiraWindow()
+    x = np.arange(200, 1000)
+    y = window.weight_by_incidence_angle(0)
+    ax.plot(x, y)
+
+    # window = DurhamNeedleWindowD2208Prod1FilterAR()
+    # x = window.df.index.values
+    # y_at_45 = window.interpolate_at_incidence_angle(45)
+    # ax.plot(x, y_at_45, label=f"@45deg incidence")
+    # for offaxis in range(6):
+    #     y = window.weight_by_incidence_angle(offaxis)
+    #     ax.plot(x, y, label=f"offaxis={offaxis}")
+
+    # y0 = window.weight_by_incidence_angle(0)
+    # y1 =
+    # ax.plot(x, y, label=f"sstcam-weighted")
 
     # mask = ~np.isnan(y)
     # x = x[mask]
@@ -183,12 +211,13 @@ if __name__ == '__main__':
 
     # y = window_sstcam.interpolate_at_incidence_angle(45)
     # ax.plot(x, y, label=f"sstcam-45deg")
-    window_sstcam = Prod4Window()
-    y = window_sstcam.weight_by_incidence_angle(0)
-    ax.plot(x, y, label=f"prod4-weighted")
+    # window_sstcam = Prod4Window()
+    # y = window_sstcam.weight_by_incidence_angle(0)
+    # ax.plot(x, y, label=f"prod4-weighted")
 
     ax.legend()
     ax.set_xlabel("Wavelength (nm)")
     ax.set_ylabel("Transmission")
-    # ax.set_title(window.__class__.__name__)
+    ax.set_ylim([0, 1])
+    ax.set_title(window.__class__.__name__)
     fig.savefig(f"window_comparison.pdf")
