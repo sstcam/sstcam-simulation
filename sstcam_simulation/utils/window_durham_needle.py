@@ -167,6 +167,17 @@ class Prod4Window(Window):
         return self.transmission[0]
 
 
+class NoWindow(Window):
+    def __init__(self):
+        super().__init__(
+            incidence_angles=np.array([0]),
+            transmission=np.full((1, 800), 0.9),
+        )
+
+    def weight_by_incidence_angle(self, off_axis_angle: float):
+        return self.transmission[0]
+
+
 class AkiraWindow(Window):
     def __init__(self):
         path = get_data("datasheet/efficiency/akira_window.csv")

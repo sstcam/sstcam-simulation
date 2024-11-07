@@ -8,13 +8,14 @@ from sstcam_simulation.utils.window_durham_needle import (
     Prod4Window,
     DurhamNeedleWindowD2208Prod1FilterAR,
     AkiraWindow,
+    NoWindow,
 )
 import numpy as np
 import pandas as pd
 from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
 
-SIM_PATH = "/Users/Jason/Software/sstcam-simulation/optimisation_studies/overvoltage/performance.h5"
+SIM_PATH = "/Users/Jason/Software/sstcam/sstcam-simulation/optimisation_studies/overvoltage/performance.h5"
 
 
 class PEInterpolator:
@@ -62,6 +63,7 @@ def main():
     )
 
     window_candidates = dict(
+        no_window=NoWindow(),
         durham_needle=WindowDurhamNeedle(),
         run2=SSTWindowRun2(),
         run3=SSTWindowRun3(),
@@ -91,10 +93,19 @@ def main():
                     camera_cherenkov_pde = eff.camera_cherenkov_pde
                     mv_per_pe = 3.2
                     nominal_nsb_rate = eff.nominal_nsb_rate.to_value("MHz")
-                    mia_pe = mia_gamma_interp(opct, nominal_nsb_rate, mv_per_pe)[0]
-                    mia_photons = mia_pe / camera_cherenkov_pde
-                    trig_thresh_pe = trigger_threshold_mean_interp(opct, nominal_nsb_rate, mv_per_pe)[0]
-                    trig_thresh_photons = trig_thresh_pe / camera_cherenkov_pde
+
+                    try:
+                        mia_pe = mia_gamma_interp(opct, nominal_nsb_rate, mv_per_pe)[0]
+                        mia_photons = mia_pe / camera_cherenkov_pde
+                    except ValueError:
+                        mia_photons = np.nan
+
+                    try:
+                        trig_thresh_pe = trigger_threshold_mean_interp(opct, nominal_nsb_rate, mv_per_pe)[0]
+                        trig_thresh_photons = trig_thresh_pe / camera_cherenkov_pde
+                    except ValueError:
+                        trig_thresh_pe = np.nan
+                        trig_thresh_photons = np.nan
 
                     d_list.append(dict(
                         sipm_candidate=sipm_candidate,
