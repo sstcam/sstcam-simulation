@@ -18,5 +18,3 @@ dependencies:
   - requests
   - tqdm
   - pytest
-  - ctapipe~=0.9.0
-  - eventio>=1.4.1

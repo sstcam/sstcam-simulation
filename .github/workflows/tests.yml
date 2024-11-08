@@ -45,4 +45,4 @@ jobs:
       - name: Test
         shell: bash -l {0}
         run: |
-          pytest -vvvv sstcam_simulation
+          make test

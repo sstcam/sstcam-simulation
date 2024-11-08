@@ -25,4 +25,4 @@ clean: uninstall ## Clean generated files and uninstall the package.
 	@rm -rf build
 
 test: ## Run all tests.
-	pytest --color=yes
+	pytest -vvv --color=yes
