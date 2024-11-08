@@ -1,0 +1,65 @@
+[build-system]
+requires = [
+	"setuptools>=65",
+    "setuptools_scm>=8",
+	"wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sstcam_simulation"
+version = "3.0.0"
+description = "SST camera low-level simulation package."
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name =  "Jason Watson", email = "jason.watson@desy.de"},
+]
+dependencies = [
+    "astropy>=3,<5",
+    "scipy~=1.2",
+    "numpy>=1.17",
+    "pandas>=0.24.0",
+    "tables~=3.6.1",
+    "matplotlib~=3.0",
+    "tqdm>=4.32",
+    "numba~=0.56.0",
+    "llvmlite~=0.38",
+    "h5py",
+    "PyYAML",
+    "requests",
+    "iminuit<2",
+    "eventio>=1.4.1,<2.0.0a0",
+    "ctapipe~=0.9.0",
+    "CHECLabPy @ git+https://github.com/sstcam/CHECLabPy@master",
+]
+
+[project.urls]
+repository = "https://github.com/sstcam/sstcam-simulation"
+
+[project.optional-dependencies]
+test = [
+    "pytest~=8.3",
+]
+develop = [
+    "sstcam_simulation[test]"
+]
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages]
+find = {include = ["sstcam_simulation*"]}
+
+[tool.setuptools.package-data]
+"*" = ["*.h5", "*.txt", "*.lis", "*.csv", "*.npz", "*.yml", "*.simtel.gz"]
+
+[tool.pytest.ini_options]
+minversion = "8"
+xfail_strict = true
+addopts = ["-ra", "--strict-config", "--strict-markers"]
+testpaths = [
+    "sstcam_simulation",
+]
+log_cli_level = "INFO"

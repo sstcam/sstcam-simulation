@@ -16,18 +16,19 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest']
-        python-version: ['3.7']
+        python-version: ['3.8']
     steps:
       - name: Setup checkout
         uses: actions/checkout@v2
       - name: Setup miniconda
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
            auto-update-conda: true
            activate-environment: sstcam-simulation
            environment-file: environment.yml
            python-version: ${{ matrix.python-version }}
            auto-activate-base: false
+           miniforge-version: latest
       - name: Conda info
         shell: bash -l {0}
         run: |
@@ -39,7 +40,7 @@ jobs:
           KONRAD_USERNAME: ${{ secrets.KONRAD_USERNAME }}
           KONRAD_PASSWORD: ${{ secrets.KONRAD_PASSWORD }}
         run: |
-          pip install -e .
+          make develop
           python sstcam_simulation/data/__init__.py
       - name: Test
         shell: bash -l {0}
