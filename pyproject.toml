@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-	"setuptools~=45.0.0",
+	"setuptools>=65",
     "setuptools_scm>=8",
 	"wheel",
 ]
@@ -17,14 +17,14 @@ authors = [
     {name =  "Jason Watson", email = "jason.watson@desy.de"},
 ]
 dependencies = [
-    "astropy>=3,<5",
+    "astropy",
     "scipy~=1.2",
-    "numpy~=1.22.4",
+    "numpy~=1.22",
     "pandas>=0.24.0",
-    "tables~=3.6.1",
+    "tables~=3.6",
     "matplotlib~=3.0",
     "tqdm>=4.32",
-    "numba~=0.56.0",
+    "numba~=0.56",
     "llvmlite~=0.38",
     "h5py",
     "PyYAML",
