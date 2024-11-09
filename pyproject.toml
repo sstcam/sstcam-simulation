@@ -17,14 +17,14 @@ authors = [
     {name =  "Jason Watson", email = "jason.watson@desy.de"},
 ]
 dependencies = [
-    "astropy",
+    "astropy>=3,<5",
     "scipy~=1.2",
-    "numpy~=1.22",
+    "numpy~=1.22.4",
     "pandas>=0.24.0",
-    "tables~=3.6",
+    "tables~=3.6.1",
     "matplotlib~=3.0",
     "tqdm>=4.32",
-    "numba~=0.56",
+    "numba~=0.56.0",
     "llvmlite~=0.38",
     "h5py",
     "PyYAML",
