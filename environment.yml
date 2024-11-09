@@ -5,7 +5,7 @@ channels:
 dependencies:
   - python=3.8
   - pip~=24.0.0
-  - setuptools==68.0.0
+  - setuptools~=45.0.0
   - ipython
   - numpy~=1.21
   - scipy
